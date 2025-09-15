@@ -29,7 +29,8 @@ if ! python3.12 --version &>/dev/null; then
 fi
 
 # --- Set up venv ---
-cd ~/Refcon
+cd "$(dirname "$0")"
+sudo apt install -y python3.12-venv
 python3.12 -m venv venv
 source venv/bin/activate
 pip install --upgrade pip
@@ -60,5 +61,6 @@ EOL
 sudo systemctl daemon-reload
 sudo systemctl enable refconbot.service
 sudo systemctl start refconbot.service
+
 
 echo "=== Refuge Economy Bot installed and running ==="
