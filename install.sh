@@ -30,7 +30,6 @@ if ! python3.12 --version &>/dev/null; then
   rm -rf Python-3.12.3 Python-3.12.3.tgz
 fi
 
-
 # --- Set up venv ---
 cd "$(dirname "$0")"
 sudo apt install -y python3.12-venv
@@ -41,7 +40,10 @@ pip install requests pytz
 
 # --- Init database ---
 sqlite3 economy.db < schema.sql
-sqlite3 economy.db "INSERT INTO servers (name, ip, port, password) VALUES ('$SERVER_NAME','$SERVER_IP',$SERVER_PORT,'$SERVER_PASS');"
+sqlite3 economy.db <<EOF
+INSERT INTO servers (name, ip, port, password)
+VALUES ("$SERVER_NAME", "$SERVER_IP", $SERVER_PORT, "$SERVER_PASS");
+EOF
 
 # --- Create systemd service ---
 SERVICE_FILE=/etc/systemd/system/refconbot.service
@@ -64,6 +66,5 @@ EOL
 sudo systemctl daemon-reload
 sudo systemctl enable refconbot.service
 sudo systemctl start refconbot.service
-
 
 echo "=== Refuge Economy Bot installed and running ==="
