@@ -73,6 +73,11 @@ def main():
         raise RuntimeError("No server configured in database. Run install.sh again.")
 
     bot = EconomyBot(row["id"], row["ip"], row["port"], row["password"])
+    bot.conn = conn  # attach db connection so commands.py can use it
+
+    if not bot.connect():
+        return
+
 
     if not bot.connect():
         return
@@ -95,6 +100,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
