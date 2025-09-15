@@ -9,9 +9,6 @@ from utils import load_admins, log
 from constants import DONOR_TIERS, DONOR_PACK, STARTER_PACK, GIMME_REWARDS
 
 
-CHAT_REGEX = re.compile(r"INF Chat \(from .+?, entity id '(\d+)', to 'Global'\): '([^']+)':\s*(.+)")
-
-
 class EconomyBot:
     def __init__(self, server_id, host, port, password):
         self.server_id = server_id
@@ -21,8 +18,8 @@ class EconomyBot:
         self.tn = None
         self.admins = []
         self.cmd_handler = CommandHandler(self)
-        self.online = {}
-        self.conn = None  # DB connection
+        self.online = {}   # {eid: {"name": str, "eos": str, "steam": str, "pos": (x,y,z)}}
+        self.conn = None   # database connection
 
     def connect(self):
         """Connect to the 7DTD server via Telnet."""
@@ -47,35 +44,41 @@ class EconomyBot:
         """Send a private message to a player."""
         self.send(f"pm {eid} \"{msg}\"")
 
-    def _dispatch(self, line: str):
-        """
-        Handle raw telnet log lines, look for chat commands,
-        and feed them to CommandHandler.
-        """
-        m = CHAT_REGEX.search(line)
-        if m:
-            eid = int(m.group(1))
-            name = m.group(2)
-            msg = m.group(3).strip()
-            print(f"[econ] Chat command from {name} (id={eid}): {msg}", flush=True)
-            self.cmd_handler.dispatch(msg, eid, name)
+    def parse_log_line(self, line: str):
+        """Parse server log lines to update online players and positions."""
+        # Chat line with EOS and entity id
+        chat_match = re.search(r"Chat \(from '(Steam_\d+|EOS_[^']+)', entity id '(\d+)'[^)]*\): '([^']+)'", line)
+        if chat_match:
+            eos_or_steam, eid, name = chat_match.groups()
+            eid = int(eid)
+            if eid not in self.online:
+                self.online[eid] = {}
+            self.online[eid].update({"name": name, "eos": eos_or_steam, "steam": eos_or_steam})
+
+        # Position update (PlayerSpawnedInWorld or similar)
+        pos_match = re.search(r"PlayerSpawnedInWorld.*at \(([-\d\.]+), ([-\d\.]+), ([-\d\.]+)\)", line)
+        if pos_match:
+            x, y, z = map(float, pos_match.groups())
+            # Sometimes EOS id is on the same line
+            eos_match = re.search(r"EOS_[0-9a-fA-F]+", line)
+            if eos_match:
+                eos = eos_match.group(0)
+                for eid, pdata in self.online.items():
+                    if pdata.get("eos") == eos:
+                        pdata["pos"] = (x, y, z)
 
     def poll(self, scheduler):
         """Poll Telnet messages and feed them to command handler."""
         try:
-            raw = self.tn.read_very_eager().decode("utf-8", errors="ignore")
-            if raw:
-                for line in raw.splitlines():
-                    if line.strip():
-                        print(f"[econ] {line}", flush=True)
-                        self._dispatch(line)
-
+            msg = self.tn.read_very_eager().decode("utf-8", errors="ignore")
+            if msg:
+                for line in msg.splitlines():
+                    self.parse_log_line(line)
+                    self.cmd_handler.dispatch(line, None, None)
             scheduler.run_pending()
-
         except EOFError:
-            print("[econ] Telnet connection closed. Attempting reconnect...")
-            if not self.connect():
-                return False
+            print("[econ] Telnet connection closed.")
+            return False
         except Exception as e:
             print(f"[econ] Error in poll loop: {e}")
         return True
@@ -94,7 +97,7 @@ def main():
         raise RuntimeError("No server configured in database. Run install.sh again.")
 
     bot = EconomyBot(row["id"], row["ip"], row["port"], row["password"])
-    bot.conn = conn  # attach db connection so commands can use it
+    bot.conn = conn  # keep DB connection available to handlers
 
     if not bot.connect():
         return
