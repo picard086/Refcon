@@ -87,19 +87,29 @@ class EconomyBot:
             raw = self.tn.read_very_eager().decode("utf-8", errors="ignore")
             if raw:
                 for line in raw.splitlines():
-                    # Print the line so you still see console output
                     print(f"[econ] {line}")
-                    # Parse for positions/players
                     self.parse_log_line(line)
-                    # Pass to command dispatcher
-                    self.cmd_handler.dispatch(line, None, None)
-            scheduler.run_pending()
+
+                    # --- NEW: detect chat commands ---
+                    chat_match = re.search(
+                        r"Chat \(from '(Steam_\d+|EOS_[^']+)', entity id '(\d+)'[^)]*\): '([^']+)'",
+                        line
+                    )
+                    if chat_match:
+                        eos_or_steam, eid, msg = chat_match.groups()
+                        eid = int(eid)
+                        name = self.online.get(eid, {}).get("name", "")
+                        if msg.startswith("/"):
+                            self.cmd_handler.dispatch(msg.strip(), eid, name)
+
+                scheduler.run_pending()
         except EOFError:
             print("[econ] Telnet connection closed.")
             return False
         except Exception as e:
             print(f"[econ] Error in poll loop: {e}")
         return True
+
 
 
 def main():
@@ -138,3 +148,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
