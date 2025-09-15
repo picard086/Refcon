@@ -2,12 +2,10 @@ import time
 import telnetlib
 import sqlite3
 import re
-import threading
 
 from scheduler import Scheduler
 from commands import CommandHandler
-from utils import load_admins, log
-from constants import DONOR_TIERS, DONOR_PACK, STARTER_PACK, GIMME_REWARDS
+from utils import load_admins
 
 
 class EconomyBot:
@@ -29,28 +27,15 @@ class EconomyBot:
             self.tn.read_until(b"Please enter password:")
             self.tn.write(self.password.encode("utf-8") + b"\n")
             print(f"[econ] Connected to {self.host}:{self.port}")
-
-            # Start heartbeat (lp every 20s)
-            threading.Thread(target=self.heartbeat, daemon=True).start()
             return True
         except Exception as e:
             print(f"[econ] Telnet connection failed: {e}")
             return False
 
-    def heartbeat(self):
-        """Periodically ask server for player list (lp) to keep online data fresh."""
-        while True:
-            try:
-                self.send("lp")
-            except Exception as e:
-                print(f"[econ] Heartbeat error: {e}")
-            time.sleep(20)
-
     def send(self, msg: str):
-        """Send a raw command to the server, then flush with rdd."""
+        """Send a raw command to the server."""
         try:
-            self.tn.write((msg + "\n").encode("utf-8"))
-            self.tn.write(b"rdd\n")  # flush trick
+            self.tn.write(msg.encode("utf-8") + b"\n")
         except Exception as e:
             print(f"[econ] Failed to send: {e}")
 
@@ -61,19 +46,26 @@ class EconomyBot:
     def parse_log_line(self, line: str):
         """Parse server log lines to update online players and positions."""
         # Chat line with EOS and entity id
-        chat_match = re.search(r"Chat \(from '(Steam_\d+|EOS_[^']+)', entity id '(\d+)'[^)]*\): '([^']+)'", line)
+        chat_match = re.search(
+            r"Chat \(from '(Steam_\d+|EOS_[^']+)', entity id '(\d+)'[^)]*\): '([^']+)'",
+            line
+        )
         if chat_match:
-            eos_or_steam, eid, name = chat_match.groups()
+            eos_or_steam, eid, message = chat_match.groups()
             eid = int(eid)
             if eid not in self.online:
                 self.online[eid] = {}
-            self.online[eid].update({"name": name, "eos": eos_or_steam, "steam": eos_or_steam})
+            self.online[eid].update({"name": "", "eos": eos_or_steam, "steam": eos_or_steam})
+
+            # If it's a command, dispatch it
+            if message.strip().startswith("/"):
+                name = self.online[eid].get("name", f"Player{eid}")
+                self.cmd_handler.dispatch(message.strip(), eid, name)
 
         # Position update (PlayerSpawnedInWorld or similar)
         pos_match = re.search(r"PlayerSpawnedInWorld.*at \(([-\d\.]+), ([-\d\.]+), ([-\d\.]+)\)", line)
         if pos_match:
             x, y, z = map(float, pos_match.groups())
-            # Sometimes EOS id is on the same line
             eos_match = re.search(r"EOS_[0-9a-fA-F]+", line)
             if eos_match:
                 eos = eos_match.group(0)
@@ -89,19 +81,6 @@ class EconomyBot:
                 for line in raw.splitlines():
                     print(f"[econ] {line}")
                     self.parse_log_line(line)
-
-                    # --- NEW: detect chat commands ---
-                    chat_match = re.search(
-                        r"Chat \(from '(Steam_\d+|EOS_[^']+)', entity id '(\d+)'[^)]*\): '([^']+)'",
-                        line
-                    )
-                    if chat_match:
-                        eos_or_steam, eid, msg = chat_match.groups()
-                        eid = int(eid)
-                        name = self.online.get(eid, {}).get("name", "")
-                        if msg.startswith("/"):
-                            self.cmd_handler.dispatch(msg.strip(), eid, name)
-
                 scheduler.run_pending()
         except EOFError:
             print("[econ] Telnet connection closed.")
@@ -109,7 +88,6 @@ class EconomyBot:
         except Exception as e:
             print(f"[econ] Error in poll loop: {e}")
         return True
-
 
 
 def main():
@@ -125,18 +103,17 @@ def main():
         raise RuntimeError("No server configured in database. Run install.sh again.")
 
     bot = EconomyBot(row["id"], row["ip"], row["port"], row["password"])
-    bot.conn = conn  # keep DB connection available to handlers
+    bot.conn = conn
 
     if not bot.connect():
         return
 
-    # load admins from JSON/DB
+    # load admins
     bot.admins = load_admins()
 
-    # scheduler bound to this bot
+    # scheduler
     scheduler = Scheduler(bot)
 
-    # main loop
     try:
         while True:
             if not bot.poll(scheduler):
@@ -148,4 +125,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
