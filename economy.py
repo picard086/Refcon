@@ -1,11 +1,15 @@
 import time
 import telnetlib
 import sqlite3
+import re
 
 from scheduler import Scheduler
 from commands import CommandHandler
 from utils import load_admins, log
 from constants import DONOR_TIERS, DONOR_PACK, STARTER_PACK, GIMME_REWARDS
+
+
+CHAT_REGEX = re.compile(r"INF Chat \(from .+?, entity id '(\d+)', to 'Global'\): '([^']+)':\s*(.+)")
 
 
 class EconomyBot:
@@ -18,7 +22,7 @@ class EconomyBot:
         self.admins = []
         self.cmd_handler = CommandHandler(self)
         self.online = {}
-        self.conn = None  # will be set in main()
+        self.conn = None  # DB connection
 
     def connect(self):
         """Connect to the 7DTD server via Telnet."""
@@ -43,6 +47,19 @@ class EconomyBot:
         """Send a private message to a player."""
         self.send(f"pm {eid} \"{msg}\"")
 
+    def _dispatch(self, line: str):
+        """
+        Handle raw telnet log lines, look for chat commands,
+        and feed them to CommandHandler.
+        """
+        m = CHAT_REGEX.search(line)
+        if m:
+            eid = int(m.group(1))
+            name = m.group(2)
+            msg = m.group(3).strip()
+            print(f"[econ] Chat command from {name} (id={eid}): {msg}", flush=True)
+            self.cmd_handler.dispatch(msg, eid, name)
+
     def poll(self, scheduler):
         """Poll Telnet messages and feed them to command handler."""
         try:
@@ -51,12 +68,9 @@ class EconomyBot:
                 for line in raw.splitlines():
                     if line.strip():
                         print(f"[econ] {line}", flush=True)
-                        self.cmd_handler.dispatch(line)
+                        self._dispatch(line)
 
             scheduler.run_pending()
-
-            # heartbeat tick
-            self.send("rdd")
 
         except EOFError:
             print("[econ] Telnet connection closed. Attempting reconnect...")
@@ -103,9 +117,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-
-
-
