@@ -39,11 +39,15 @@ pip install --upgrade pip
 pip install requests pytz
 
 # --- Init database ---
-sqlite3 economy.db < schema.sql
-sqlite3 economy.db <<EOF
+if [ ! -f economy.db ]; then
+  sqlite3 economy.db < schema.sql
+  sqlite3 economy.db <<EOF
 INSERT INTO servers (name, ip, port, password)
 VALUES ("$SERVER_NAME", "$SERVER_IP", $SERVER_PORT, "$SERVER_PASS");
 EOF
+else
+  echo "Database already exists, skipping schema init."
+fi
 
 # --- Create systemd service ---
 SERVICE_FILE=/etc/systemd/system/refconbot.service
