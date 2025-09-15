@@ -5,7 +5,7 @@ from db import (
     is_admin, add_admin, get_vote, save_vote
 )
 from utils import COL_OK, COL_WARN, COL_ERR, COL_INFO, COL_GOLD, COL_END
-from economy import DONOR_TIERS, DONOR_PACK, STARTER_PACK, GIMME_REWARDS
+from constants import DONOR_TIERS, DONOR_PACK, STARTER_PACK, GIMME_REWARDS
 
 class CommandHandler:
     def __init__(self, bot):
@@ -186,3 +186,4 @@ class CommandHandler:
                     self.bot.pm(eid, f"{COL_WARN}No vote found yet.{COL_END}")
             except Exception:
                 self.bot.pm(eid, f"{COL_ERR}Vote check failed.{COL_END}")
+
