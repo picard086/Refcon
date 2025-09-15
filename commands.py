@@ -1,11 +1,14 @@
 import shlex, time, requests
 from db import (
     get_player, update_balance, update_field,
-    get_shop, add_teleport, get_teleports, del_teleport,
-    is_admin, add_admin, get_vote, save_vote
+    add_teleport, get_teleports, del_teleport,
+    is_admin, add_admin, save_vote
 )
 from utils import COL_OK, COL_WARN, COL_ERR, COL_INFO, COL_GOLD, COL_END
-from constants import DONOR_TIERS, DONOR_PACK, STARTER_PACK, GIMME_REWARDS
+from constants import (
+    DONOR_TIERS, DONOR_PACK, STARTER_PACK, GIMME_REWARDS,
+    DEFAULT_SHOP, DEFAULT_GOLDSHOP
+)
 
 
 class CommandHandler:
@@ -27,8 +30,7 @@ class CommandHandler:
 
         # ---------------- Shops ----------------
         elif msg.startswith("/shop"):
-            items = get_shop(self.bot.conn, "coin")
-            for i in items:
+            for i in DEFAULT_SHOP:
                 self.bot.pm(eid, f"{COL_GOLD}ID {i['id']}: {i['friendly']} - {i['price']} coins{COL_END}")
             self.bot.pm(eid, f"{COL_INFO}Use /buy <id>{COL_END}")
 
@@ -37,20 +39,18 @@ class CommandHandler:
             if len(p) < 2: 
                 return self.bot.pm(eid, f"{COL_INFO}Usage: /buy <id>{COL_END}")
             iid = int(p[1])
-            items = get_shop(self.bot.conn, "coin")
-            it = next((x for x in items if x["id"] == iid), None)
+            it = next((x for x in DEFAULT_SHOP if x["id"] == iid), None)
             if not it: 
                 return self.bot.pm(eid, f"{COL_ERR}Item not found.{COL_END}")
             if pdata["coins"] < it["price"]:
                 return self.bot.pm(eid, f"{COL_ERR}Not enough coins.{COL_END}")
             new_balance = pdata["coins"] - it["price"]
             update_balance(self.bot.conn, eos, self.bot.server_id, coins=new_balance)
-            self.bot.send(f"giveplus {eid} {it['item_name']} {it['amount']}")
+            self.bot.send(f"giveplus {eid} {it['name']} {it['amount']}")
             self.bot.pm(eid, f"{COL_OK}Purchased {it['friendly']}!{COL_END}")
 
         elif msg.startswith("/goldshop"):
-            items = get_shop(self.bot.conn, "gold")
-            for i in items:
+            for i in DEFAULT_GOLDSHOP:
                 self.bot.pm(eid, f"{COL_GOLD}ID {i['id']}: {i['friendly']} - {i['price']} gold{COL_END}")
             self.bot.pm(eid, f"{COL_INFO}Use /goldbuy <id>{COL_END}")
 
@@ -59,15 +59,14 @@ class CommandHandler:
             if len(p) < 2: 
                 return self.bot.pm(eid, f"{COL_INFO}Usage: /goldbuy <id>{COL_END}")
             iid = int(p[1])
-            items = get_shop(self.bot.conn, "gold")
-            it = next((x for x in items if x["id"] == iid), None)
+            it = next((x for x in DEFAULT_GOLDSHOP if x["id"] == iid), None)
             if not it: 
                 return self.bot.pm(eid, f"{COL_ERR}Item not found.{COL_END}")
             if pdata["gold"] < it["price"]:
                 return self.bot.pm(eid, f"{COL_ERR}Not enough gold.{COL_END}")
             new_gold = pdata["gold"] - it["price"]
             update_balance(self.bot.conn, eos, self.bot.server_id, gold=new_gold)
-            self.bot.send(f"giveplus {eid} {it['item_name']} {it['amount']}")
+            self.bot.send(f"giveplus {eid} {it['name']} {it['amount']}")
             self.bot.pm(eid, f"{COL_OK}Purchased {it['friendly']} with gold!{COL_END}")
 
         # ---------------- Kits ----------------
@@ -146,7 +145,7 @@ class CommandHandler:
 
         # ---------------- Vote ----------------
         elif msg == "/vote":
-            api_key = "REPLACE_WITH_REAL_API_KEY"
+            api_key = "HgpNQra3gAUGmzYL6SDCV30YNuFUSzGniRy"
             steamid = self.bot.online.get(eid, {}).get("steam", None)
             if not steamid or steamid == "0":
                 return self.bot.pm(eid, f"{COL_WARN}No SteamID found.{COL_END}")
@@ -161,5 +160,3 @@ class CommandHandler:
                     self.bot.pm(eid, f"{COL_WARN}No vote found yet.{COL_END}")
             except Exception:
                 self.bot.pm(eid, f"{COL_ERR}Vote check failed.{COL_END}")
-
-
