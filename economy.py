@@ -17,6 +17,8 @@ class EconomyBot:
         self.tn = None
         self.admins = []
         self.cmd_handler = CommandHandler(self)
+        self.online = {}
+
 
     def connect(self):
         """Connect to the 7DTD server via Telnet."""
@@ -91,6 +93,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
