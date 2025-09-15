@@ -48,7 +48,7 @@ DEFAULT_SHOP = [
     {"id": 12, "name": "drinkJarGrandpasForgettingElixir", "friendly": "Character Reset", "price": 100, "amount": 1},
     {"id": 13, "name": "drinkJarGoldenRodTea", "friendly": "Golden Rod Tea", "price": 50, "amount": 5},
     {"id": 14, "name": "foodCanShamSchematic", "friendly": "ShamRecipe", "price": 500, "amount": 1},
-    {"id": 15, "name": "drugAntibiotics", "friendly": "Antipbiotics", "price": 50, "amount": 1},
+    {"id": 15, "name": "drugAntibiotics", "friendly": "Antibiotics", "price": 50, "amount": 1},
     {"id": 16, "name": "foodBaconAndEggs", "friendly": "Bacon and Eggs", "price": 25, "amount": 1},
     {"id": 17, "name": "resourceGlue", "friendly": "Glue", "price": 250, "amount": 100},
     {"id": 18, "name": "resourceRepairKit", "friendly": "Repair Kit", "price": 80, "amount": 1},
@@ -56,10 +56,10 @@ DEFAULT_SHOP = [
     {"id": 20, "name": "medicalFirstAidBandage", "friendly": "Bandages x5", "price": 25, "amount": 5},
     {"id": 21, "name": "ammoGasCan", "friendly": "Gas Can", "price": 100, "amount": 250},
     {"id": 22, "name": "terrTopSoil", "friendly": "Cheap Soil", "price": 1, "amount": 250},
-]:contentReference[oaicite:0]{index=0}
+]
 
 DEFAULT_GOLDSHOP = [
     {"id": 1, "name": "meleeToolPaintToolAdmin", "friendly": "Endless Paint Brush", "price": 1, "amount": 1},
     {"id": 2, "name": "cntVendingMachine", "friendly": "Player Vending Machine", "price": 1, "amount": 1},
     {"id": 3, "name": "meleeMasterTool", "friendly": "Master Tool", "price": 3, "amount": 1},
-]:contentReference[oaicite:1]{index=1}
+]
