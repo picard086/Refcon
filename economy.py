@@ -3,7 +3,7 @@ import telnetlib
 import sqlite3
 
 from scheduler import Scheduler
-from commands import handle_command
+from commands import CommandHandler
 from utils import load_admins, log
 from constants import DONOR_TIERS, DONOR_PACK, STARTER_PACK, GIMME_REWARDS
 
@@ -79,4 +79,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
