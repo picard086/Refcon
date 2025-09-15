@@ -70,10 +70,14 @@ class EconomyBot:
     def poll(self, scheduler):
         """Poll Telnet messages and feed them to command handler."""
         try:
-            msg = self.tn.read_very_eager().decode("utf-8", errors="ignore")
-            if msg:
-                for line in msg.splitlines():
+            raw = self.tn.read_very_eager().decode("utf-8", errors="ignore")
+            if raw:
+                for line in raw.splitlines():
+                    # Print the line so you still see console output
+                    print(f"[econ] {line}")
+                    # Parse for positions/players
                     self.parse_log_line(line)
+                    # Pass to command dispatcher
                     self.cmd_handler.dispatch(line, None, None)
             scheduler.run_pending()
         except EOFError:
