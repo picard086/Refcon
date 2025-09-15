@@ -1,20 +1,27 @@
 #!/usr/bin/env python3
-import sys
+import time
+from economy import EconomyBot
 from config import load_server_config
-from telnet_client import TelnetBot
 
 def main():
+    print("[econ] Starting Refuge Economy Bot...", flush=True)
+
+    # Load server config from DB
     server = load_server_config()
-    bot = TelnetBot(
-        host=server["ip"],
-        port=server["port"],
-        password=server["password"],
-        server_id=server["id"]
-    )
-    bot.connect()
+    print(f"[econ] Loaded server config: {server['name']} {server['ip']}:{server['port']}", flush=True)
+
+    # Start the bot
+    bot = EconomyBot(server)
+    bot.run()  # should block if implemented correctly
+
+    # Safety net: if run() ever returns, keep process alive
+    print("[econ] WARNING: bot.run() exited unexpectedly, keeping process alive.", flush=True)
+    while True:
+        time.sleep(60)
 
 if __name__ == "__main__":
     try:
         main()
-    except KeyboardInterrupt:
-        sys.exit(0)
+    except Exception as e:
+        print(f"[econ] Fatal error: {e}", flush=True)
+        raise
