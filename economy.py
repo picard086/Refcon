@@ -19,7 +19,6 @@ class EconomyBot:
         self.cmd_handler = CommandHandler(self)
         self.online = {}
 
-
     def connect(self):
         """Connect to the 7DTD server via Telnet."""
         try:
@@ -46,9 +45,12 @@ class EconomyBot:
     def poll(self, scheduler):
         """Poll Telnet messages and feed them to command handler."""
         try:
-            msg = self.tn.read_very_eager().decode("utf-8", errors="ignore")
-            if msg:
-                self.cmd_handler.dispatch(msg)
+            raw = self.tn.read_very_eager().decode("utf-8", errors="ignore")
+            if raw:
+                for line in raw.splitlines():
+                    if line.strip():
+                        print(f"[econ] {line}", flush=True)  # log everything
+                        self.cmd_handler.dispatch(line)
             scheduler.run_pending()
         except EOFError:
             print("[econ] Telnet connection closed.")
@@ -93,7 +95,6 @@ def main():
 
 if __name__ == "__main__":
     main()
-
 
 
 
