@@ -2,6 +2,7 @@ import time
 import telnetlib
 import sqlite3
 import re
+import threading
 
 from scheduler import Scheduler
 from commands import CommandHandler
@@ -28,15 +29,28 @@ class EconomyBot:
             self.tn.read_until(b"Please enter password:")
             self.tn.write(self.password.encode("utf-8") + b"\n")
             print(f"[econ] Connected to {self.host}:{self.port}")
+
+            # Start heartbeat (lp every 20s)
+            threading.Thread(target=self.heartbeat, daemon=True).start()
             return True
         except Exception as e:
             print(f"[econ] Telnet connection failed: {e}")
             return False
 
+    def heartbeat(self):
+        """Periodically ask server for player list (lp) to keep online data fresh."""
+        while True:
+            try:
+                self.send("lp")
+            except Exception as e:
+                print(f"[econ] Heartbeat error: {e}")
+            time.sleep(20)
+
     def send(self, msg: str):
-        """Send a raw command to the server."""
+        """Send a raw command to the server, then flush with rdd."""
         try:
-            self.tn.write(msg.encode("utf-8") + b"\n")
+            self.tn.write((msg + "\n").encode("utf-8"))
+            self.tn.write(b"rdd\n")  # flush trick
         except Exception as e:
             print(f"[econ] Failed to send: {e}")
 
