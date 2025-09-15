@@ -47,20 +47,19 @@ class EconomyBot:
         """Parse server log lines to update online players and positions."""
         # Chat line with EOS and entity id
         chat_match = re.search(
-            r"Chat \(from '(Steam_\d+|EOS_[^']+)', entity id '(\d+)'[^)]*\): '([^']+)'",
+            r"Chat \(from '(Steam_\d+|EOS_[^']+)', entity id '(\d+)'[^)]*\): '([^']+)': (/.+)",
             line
         )
         if chat_match:
-            eos_or_steam, eid, message = chat_match.groups()
+            eos_or_steam, eid, name, message = chat_match.groups()
             eid = int(eid)
             if eid not in self.online:
                 self.online[eid] = {}
-            self.online[eid].update({"name": "", "eos": eos_or_steam, "steam": eos_or_steam})
+            self.online[eid].update({"name": name, "eos": eos_or_steam, "steam": eos_or_steam})
 
-            # If it's a command, dispatch it
             if message.strip().startswith("/"):
-                name = self.online[eid].get("name", f"Player{eid}")
                 self.cmd_handler.dispatch(message.strip(), eid, name)
+
 
         # Position update (PlayerSpawnedInWorld or similar)
         pos_match = re.search(r"PlayerSpawnedInWorld.*at \(([-\d\.]+), ([-\d\.]+), ([-\d\.]+)\)", line)
@@ -125,3 +124,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
