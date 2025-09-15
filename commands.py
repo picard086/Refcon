@@ -36,11 +36,11 @@ class CommandHandler:
 
         elif msg.startswith("/buy"):
             p = shlex.split(msg)
-            if len(p) < 2: 
+            if len(p) < 2:
                 return self.bot.pm(eid, f"{COL_INFO}Usage: /buy <id>{COL_END}")
             iid = int(p[1])
             it = next((x for x in DEFAULT_SHOP if x["id"] == iid), None)
-            if not it: 
+            if not it:
                 return self.bot.pm(eid, f"{COL_ERR}Item not found.{COL_END}")
             if pdata["coins"] < it["price"]:
                 return self.bot.pm(eid, f"{COL_ERR}Not enough coins.{COL_END}")
@@ -56,11 +56,11 @@ class CommandHandler:
 
         elif msg.startswith("/goldbuy"):
             p = shlex.split(msg)
-            if len(p) < 2: 
+            if len(p) < 2:
                 return self.bot.pm(eid, f"{COL_INFO}Usage: /goldbuy <id>{COL_END}")
             iid = int(p[1])
             it = next((x for x in DEFAULT_GOLDSHOP if x["id"] == iid), None)
-            if not it: 
+            if not it:
                 return self.bot.pm(eid, f"{COL_ERR}Item not found.{COL_END}")
             if pdata["gold"] < it["price"]:
                 return self.bot.pm(eid, f"{COL_ERR}Not enough gold.{COL_END}")
@@ -71,7 +71,7 @@ class CommandHandler:
 
         # ---------------- Kits ----------------
         elif msg == "/starterkit":
-            if pdata["starter_used"]: 
+            if pdata["starter_used"]:
                 return self.bot.pm(eid, f"{COL_WARN}Already claimed starter kit.{COL_END}")
             for i in STARTER_PACK:
                 self.bot.send(f"giveplus {eid} {i['name']} {i['amount']}")
@@ -102,22 +102,36 @@ class CommandHandler:
         # ---------------- Teleports ----------------
         elif msg.startswith("/settp"):
             p = shlex.split(msg)
-            if len(p) < 2: return self.bot.pm(eid, f"{COL_INFO}Usage: /settp <name>{COL_END}")
+            if len(p) < 2:
+                return self.bot.pm(eid, f"{COL_INFO}Usage: /settp <name>{COL_END}")
             pos = self.bot.online.get(eid, {}).get("pos", (0, 0, 0))
             add_teleport(self.bot.conn, pdata["id"], p[1], pos)
             self.bot.pm(eid, f"{COL_OK}Teleport '{p[1]}' saved.{COL_END}")
 
         elif msg == "/tplist":
             tps = get_teleports(self.bot.conn, pdata["id"])
-            if not tps: return self.bot.pm(eid, f"{COL_INFO}No teleports saved.{COL_END}")
+            if not tps:
+                return self.bot.pm(eid, f"{COL_INFO}No teleports saved.{COL_END}")
             for tp in tps:
                 self.bot.pm(eid, f"{COL_GOLD}{tp['name']}{COL_END} -> ({tp['x']}, {tp['y']}, {tp['z']})")
 
         elif msg.startswith("/deltp"):
             p = shlex.split(msg)
-            if len(p) < 2: return self.bot.pm(eid, f"{COL_INFO}Usage: /deltp <name>{COL_END}")
+            if len(p) < 2:
+                return self.bot.pm(eid, f"{COL_INFO}Usage: /deltp <name>{COL_END}")
             del_teleport(self.bot.conn, pdata["id"], p[1])
             self.bot.pm(eid, f"{COL_OK}Teleport '{p[1]}' deleted.{COL_END}")
+
+        elif msg.startswith("/tp"):
+            p = shlex.split(msg)
+            if len(p) < 2:
+                return self.bot.pm(eid, f"{COL_INFO}Usage: /tp <name>{COL_END}")
+            tps = get_teleports(self.bot.conn, pdata["id"])
+            tp = next((t for t in tps if t["name"].lower() == p[1].lower()), None)
+            if not tp:
+                return self.bot.pm(eid, f"{COL_ERR}Teleport not found.{COL_END}")
+            self.bot.send(f"teleportplayer {eid} {tp['x']} {tp['y']} {tp['z']}")
+            self.bot.pm(eid, f"{COL_OK}Teleported to {p[1]}!{COL_END}")
 
         # ---------------- Admin ----------------
         elif msg.startswith("/addcoins"):
