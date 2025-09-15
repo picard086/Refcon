@@ -16,6 +16,7 @@ class EconomyBot:
         self.password = password
         self.tn = None
         self.admins = []
+        self.cmd_handler = CommandHandler(self)
 
     def connect(self):
         """Connect to the 7DTD server via Telnet."""
@@ -29,12 +30,23 @@ class EconomyBot:
             print(f"[econ] Telnet connection failed: {e}")
             return False
 
+    def send(self, msg: str):
+        """Send a raw command to the server."""
+        try:
+            self.tn.write(msg.encode("utf-8") + b"\n")
+        except Exception as e:
+            print(f"[econ] Failed to send: {e}")
+
+    def pm(self, eid: int, msg: str):
+        """Send a private message to a player."""
+        self.send(f"pm {eid} \"{msg}\"")
+
     def poll(self, scheduler):
         """Poll Telnet messages and feed them to command handler."""
         try:
             msg = self.tn.read_very_eager().decode("utf-8", errors="ignore")
             if msg:
-                handle_command(msg, self.tn, self.admins)
+                self.cmd_handler.dispatch(msg)
             scheduler.run_pending()
         except EOFError:
             print("[econ] Telnet connection closed.")
@@ -79,5 +91,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
