@@ -14,9 +14,9 @@ echo
 if ! python3.12 --version &>/dev/null; then
   echo "Installing Python 3.12.3..."
   sudo apt update
-  sudo apt install -y wget build-essential libssl-dev zlib1g-dev \
-    libncurses5-dev libncursesw5-dev libreadline-dev libsqlite3-dev \
-    libgdbm-dev libdb5.3-dev libbz2-dev libexpat1-dev liblzma-dev tk-dev uuid-dev
+sudo apt install -y wget build-essential sqlite3 libssl-dev zlib1g-dev \
+  libncurses5-dev libncursesw5-dev libreadline-dev libsqlite3-dev \
+  libgdbm-dev libdb5.3-dev libbz2-dev libexpat1-dev liblzma-dev tk-dev uuid-dev
 
   wget https://www.python.org/ftp/python/3.12.3/Python-3.12.3.tgz
   tar xvf Python-3.12.3.tgz
