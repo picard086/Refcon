@@ -28,3 +28,19 @@ GIMME_REWARDS = [
     {"name": "qt_jennifer", "friendly": "Jennifer's Treasure Map", "amount": 1},
     {"name": "resourceRepairKitImp", "friendly": "Improved Repair Kit", "amount": 1},
 ]
+
+
+# --- Entry point ---
+def main():
+    print("[econ] Economy bot main loop starting...")
+    # TODO: replace this with your actual startup logic:
+    # connect telnet, load DB, start scheduler, etc.
+    # for now it just sits in a loop
+    import time
+    while True:
+        time.sleep(5)
+        print("[econ] Bot heartbeat...")
+
+
+if __name__ == "__main__":
+    main()
