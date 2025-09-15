@@ -1,4 +1,4 @@
-import shlex, time, threading, requests
+import shlex, time, requests
 from db import (
     get_player, update_balance, update_field,
     get_shop, add_teleport, get_teleports, del_teleport,
@@ -7,15 +7,13 @@ from db import (
 from utils import COL_OK, COL_WARN, COL_ERR, COL_INFO, COL_GOLD, COL_END
 from constants import DONOR_TIERS, DONOR_PACK, STARTER_PACK, GIMME_REWARDS
 
+
 class CommandHandler:
     def __init__(self, bot):
         self.bot = bot
 
-    def dispatch(self, line: str):
-        if "INF Chat" not in line or "entity id" not in line:
-            return
-        eid = int(line.split("entity id '")[1].split("'")[0])
-        msg = line.split("):", 1)[1].strip()
+    def dispatch(self, msg: str, eid: int, name: str):
+        """Handle a parsed chat command from a player."""
         eos = self.bot.online.get(eid, {}).get("eos", str(eid))
         pdata = get_player(self.bot.conn, eos, self.bot.server_id)
 
@@ -36,11 +34,13 @@ class CommandHandler:
 
         elif msg.startswith("/buy"):
             p = shlex.split(msg)
-            if len(p) < 2: return self.bot.pm(eid, f"{COL_INFO}Usage: /buy <id>{COL_END}")
+            if len(p) < 2: 
+                return self.bot.pm(eid, f"{COL_INFO}Usage: /buy <id>{COL_END}")
             iid = int(p[1])
             items = get_shop(self.bot.conn, "coin")
             it = next((x for x in items if x["id"] == iid), None)
-            if not it: return self.bot.pm(eid, f"{COL_ERR}Item not found.{COL_END}")
+            if not it: 
+                return self.bot.pm(eid, f"{COL_ERR}Item not found.{COL_END}")
             if pdata["coins"] < it["price"]:
                 return self.bot.pm(eid, f"{COL_ERR}Not enough coins.{COL_END}")
             new_balance = pdata["coins"] - it["price"]
@@ -56,11 +56,13 @@ class CommandHandler:
 
         elif msg.startswith("/goldbuy"):
             p = shlex.split(msg)
-            if len(p) < 2: return self.bot.pm(eid, f"{COL_INFO}Usage: /goldbuy <id>{COL_END}")
+            if len(p) < 2: 
+                return self.bot.pm(eid, f"{COL_INFO}Usage: /goldbuy <id>{COL_END}")
             iid = int(p[1])
             items = get_shop(self.bot.conn, "gold")
             it = next((x for x in items if x["id"] == iid), None)
-            if not it: return self.bot.pm(eid, f"{COL_ERR}Item not found.{COL_END}")
+            if not it: 
+                return self.bot.pm(eid, f"{COL_ERR}Item not found.{COL_END}")
             if pdata["gold"] < it["price"]:
                 return self.bot.pm(eid, f"{COL_ERR}Not enough gold.{COL_END}")
             new_gold = pdata["gold"] - it["price"]
@@ -68,37 +70,10 @@ class CommandHandler:
             self.bot.send(f"giveplus {eid} {it['item_name']} {it['amount']}")
             self.bot.pm(eid, f"{COL_OK}Purchased {it['friendly']} with gold!{COL_END}")
 
-        # ---------------- Donors ----------------
-        elif msg.startswith("/adddonor"):
-            if not is_admin(self.bot.conn, eos):
-                return self.bot.pm(eid, f"{COL_ERR}Not admin.{COL_END}")
-            p = shlex.split(msg)
-            if len(p) < 3: return self.bot.pm(eid, f"{COL_INFO}Usage: /adddonor <name> <t1-t4>{COL_END}")
-            tier = p[2].lower()
-            if tier not in DONOR_TIERS:
-                return self.bot.pm(eid, f"{COL_ERR}Invalid tier.{COL_END}")
-            update_field(self.bot.conn, eos, self.bot.server_id, "donor", tier)
-            update_field(self.bot.conn, eos, self.bot.server_id, "multiplier", DONOR_TIERS[tier]["mult"])
-            self.bot.pm(eid, f"{COL_OK}Set donor tier {tier.upper()}.{COL_END}")
-
-        elif msg.startswith("/removedonor"):
-            if not is_admin(self.bot.conn, eos):
-                return self.bot.pm(eid, f"{COL_ERR}Not admin.{COL_END}")
-            update_field(self.bot.conn, eos, self.bot.server_id, "donor", None)
-            update_field(self.bot.conn, eos, self.bot.server_id, "multiplier", 1.0)
-            self.bot.pm(eid, f"{COL_OK}Removed donor status.{COL_END}")
-
-        elif msg == "/donor":
-            if not pdata["donor"]: return self.bot.pm(eid, f"{COL_ERR}Not a donor.{COL_END}")
-            if pdata["donor_used"]: return self.bot.pm(eid, f"{COL_WARN}Already claimed donor pack.{COL_END}")
-            for i in DONOR_PACK:
-                self.bot.send(f"giveplus {eid} {i['name']} {i['amount']}")
-            update_field(self.bot.conn, eos, self.bot.server_id, "donor_used", 1)
-            self.bot.pm(eid, f"{COL_OK}Donor pack claimed!{COL_END}")
-
         # ---------------- Kits ----------------
         elif msg == "/starterkit":
-            if pdata["starter_used"]: return self.bot.pm(eid, f"{COL_WARN}Already claimed starter kit.{COL_END}")
+            if pdata["starter_used"]: 
+                return self.bot.pm(eid, f"{COL_WARN}Already claimed starter kit.{COL_END}")
             for i in STARTER_PACK:
                 self.bot.send(f"giveplus {eid} {i['name']} {i['amount']}")
             update_field(self.bot.conn, eos, self.bot.server_id, "starter_used", 1)
@@ -186,4 +161,5 @@ class CommandHandler:
                     self.bot.pm(eid, f"{COL_WARN}No vote found yet.{COL_END}")
             except Exception:
                 self.bot.pm(eid, f"{COL_ERR}Vote check failed.{COL_END}")
+
 
