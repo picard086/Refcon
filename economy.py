@@ -18,6 +18,7 @@ class EconomyBot:
         self.admins = []
         self.cmd_handler = CommandHandler(self)
         self.online = {}
+        self.conn = None  # will be set in main()
 
     def connect(self):
         """Connect to the 7DTD server via Telnet."""
@@ -49,13 +50,18 @@ class EconomyBot:
             if raw:
                 for line in raw.splitlines():
                     if line.strip():
-                        print(f"[econ] {line}", flush=True)  # log everything
+                        print(f"[econ] {line}", flush=True)
                         self.cmd_handler.dispatch(line)
+
             scheduler.run_pending()
-            self.send("rdd")           
+
+            # heartbeat tick
+            self.send("rdd")
+
         except EOFError:
-            print("[econ] Telnet connection closed.")
-            return False
+            print("[econ] Telnet connection closed. Attempting reconnect...")
+            if not self.connect():
+                return False
         except Exception as e:
             print(f"[econ] Error in poll loop: {e}")
         return True
@@ -74,11 +80,7 @@ def main():
         raise RuntimeError("No server configured in database. Run install.sh again.")
 
     bot = EconomyBot(row["id"], row["ip"], row["port"], row["password"])
-    bot.conn = conn  # attach db connection so commands.py can use it
-
-    if not bot.connect():
-        return
-
+    bot.conn = conn  # attach db connection so commands can use it
 
     if not bot.connect():
         return
@@ -101,6 +103,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
