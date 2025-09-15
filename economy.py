@@ -39,44 +39,72 @@ GIMME_REWARDS = [
 ]
 
 
+# --- Bot wrapper object ---
+class EconomyBot:
+    def __init__(self, server_id, host, port, password):
+        self.server_id = server_id
+        self.host = host
+        self.port = port
+        self.password = password
+        self.tn = None
+        self.admins = []
+
+    def connect(self):
+        """Connect to the 7DTD server via Telnet."""
+        try:
+            self.tn = telnetlib.Telnet(self.host, int(self.port))
+            self.tn.read_until(b"Please enter password:")
+            self.tn.write(self.password.encode("utf-8") + b"\n")
+            print(f"[econ] Connected to {self.host}:{self.port}")
+            return True
+        except Exception as e:
+            print(f"[econ] Telnet connection failed: {e}")
+            return False
+
+    def poll(self, scheduler):
+        """Poll Telnet messages and feed them to command handler."""
+        try:
+            msg = self.tn.read_very_eager().decode("utf-8", errors="ignore")
+            if msg:
+                handle_command(msg, self.tn, self.admins)
+            scheduler.run_pending()
+        except EOFError:
+            print("[econ] Telnet connection closed.")
+            return False
+        except Exception as e:
+            print(f"[econ] Error in poll loop: {e}")
+        return True
+
+
 # --- Entrypoint ---
 def main():
     print("[econ] Economy bot main loop starting...")
 
     # load server config from DB
     conn = sqlite3.connect("economy.db")
+    conn.row_factory = sqlite3.Row
     cur = conn.cursor()
-    cur.execute("SELECT ip, port, password FROM servers LIMIT 1;")
+    cur.execute("SELECT id, ip, port, password FROM servers LIMIT 1;")
     row = cur.fetchone()
     if not row:
         raise RuntimeError("No server configured in database. Run install.sh again.")
-    host, port, password = row
-    conn.close()
 
-    # connect telnet
-    try:
-        tn = telnetlib.Telnet(host, int(port))
-        tn.read_until(b"Please enter password:")
-        tn.write(password.encode("utf-8") + b"\n")
-        print(f"[econ] Connected to {host}:{port}")
-    except Exception as e:
-        print(f"[econ] Telnet connection failed: {e}")
+    bot = EconomyBot(row["id"], row["ip"], row["port"], row["password"])
+
+    if not bot.connect():
         return
 
-    # load admins
-    admins = load_admins()
+    # load admins from JSON/DB
+    bot.admins = load_admins()
 
-    # scheduler
-    scheduler = Scheduler()
+    # scheduler bound to this bot
+    scheduler = Scheduler(bot)
 
     # main loop
     try:
         while True:
-            msg = tn.read_very_eager().decode("utf-8", errors="ignore")
-            if msg:
-                handle_command(msg, tn, admins)
-
-            scheduler.run_pending()
+            if not bot.poll(scheduler):
+                break
             time.sleep(1)
     except KeyboardInterrupt:
         print("[econ] Shutting down bot...")
