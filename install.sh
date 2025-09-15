@@ -72,3 +72,4 @@ sudo systemctl enable refconbot.service
 sudo systemctl start refconbot.service
 
 echo "=== Refuge Economy Bot installed and running ==="
+
