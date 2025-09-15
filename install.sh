@@ -60,7 +60,7 @@ After=network.target
 Type=simple
 User=$USER
 WorkingDirectory=$(pwd)
-ExecStart=$(pwd)/venv/bin/python -m __main__
+ExecStart=$(pwd)/venv/bin/python $(pwd)/__main__.py
 Restart=always
 
 [Install]
