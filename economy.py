@@ -52,6 +52,7 @@ class EconomyBot:
                         print(f"[econ] {line}", flush=True)  # log everything
                         self.cmd_handler.dispatch(line)
             scheduler.run_pending()
+            self.send("rdd")           
         except EOFError:
             print("[econ] Telnet connection closed.")
             return False
@@ -100,6 +101,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
