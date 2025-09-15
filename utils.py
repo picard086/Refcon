@@ -1,0 +1,6 @@
+COL_OK   = "[00FF00]"
+COL_WARN = "[FFA500]"
+COL_ERR  = "[FF0000]"
+COL_INFO = "[00BFFF]"
+COL_GOLD = "[FFD700]"
+COL_END  = "[-]"
