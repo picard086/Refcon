@@ -33,9 +33,11 @@ class EconomyBot:
             return False
 
     def send(self, msg: str):
-        """Send a raw command to the server."""
+        """Send a raw command to the server and flush with rdd."""
         try:
-            self.tn.write(msg.encode("utf-8") + b"\n")
+            self.tn.write((msg + "\n").encode("utf-8"))
+            time.sleep(0.05)
+            self.tn.write(b"rdd\n")
         except Exception as e:
             print(f"[econ] Failed to send: {e}")
 
