@@ -43,7 +43,14 @@ if [ ! -f economy.db ]; then
   echo "Initializing database schema..."
   sqlite3 economy.db < schema.sql
 else
-  echo "Database already exists, skipping schema init."
+  echo "Database already exists, checking schema..."
+
+  # Make sure "name" column exists in servers
+  HAS_NAME=$(sqlite3 economy.db "PRAGMA table_info(servers);" | awk -F'|' '{print $2}' | grep -c '^name$')
+  if [ "$HAS_NAME" -eq 0 ]; then
+    echo "Adding 'name' column to servers table..."
+    sqlite3 economy.db "ALTER TABLE servers ADD COLUMN name TEXT DEFAULT 'Unnamed';"
+  fi
 fi
 
 # --- Insert servers ---
@@ -60,10 +67,11 @@ VALUES ("$SERVER_NAME", "$SERVER_IP", $SERVER_PORT, "$SERVER_PASS");
 EOF
 done
 
-# --- Store master password in settings table ---
+# --- Store master password in admins table ---
 sqlite3 economy.db <<EOF
-CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT);
-INSERT OR REPLACE INTO settings (key, value) VALUES ('master_password', "$MASTER_PASS");
+CREATE TABLE IF NOT EXISTS master_password (pw TEXT);
+DELETE FROM master_password;
+INSERT INTO master_password (pw) VALUES ("$MASTER_PASS");
 EOF
 
 # --- Create systemd service ---
@@ -86,6 +94,6 @@ EOL
 
 sudo systemctl daemon-reload
 sudo systemctl enable refconbot.service
-sudo systemctl start refconbot.service
+sudo systemctl restart refconbot.service
 
 echo "=== Refuge Economy Bot installed and running ==="
