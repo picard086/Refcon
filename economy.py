@@ -8,6 +8,10 @@ from scheduler import Scheduler
 from commands import CommandHandler
 from utils import load_admins
 
+# --- NEW IMPORTS for API bridge ---
+from fastapi import FastAPI, Request
+import uvicorn
+
 
 class EconomyBot:
     def __init__(self, server_id, name, host, port, password, conn):
@@ -125,6 +129,25 @@ def run_bot(bot: EconomyBot):
         scheduler.stop()
 
 
+# ---- NEW: API Bridge ----
+bot_api = FastAPI()
+bot_instances = []  # keep track of all bots
+
+@bot_api.post("/run_command")
+async def run_command(request: Request):
+    data = await request.json()
+    cmd = data.get("cmd")
+    if not cmd:
+        return {"status": "error", "msg": "No command provided"}
+    # send command to all connected bots
+    for bot in bot_instances:
+        bot.send(cmd)
+    return {"status": "ok", "cmd": cmd}
+
+def start_bot_api():
+    uvicorn.run(bot_api, host="127.0.0.1", port=8899, log_level="info")
+
+
 def main():
     print("[econ] Multi-server Economy bot starting...")
 
@@ -144,11 +167,15 @@ def main():
         bot = EconomyBot(row["id"], row["name"], row["ip"], row["port"], row["password"], conn)
         if bot.connect():
             print(f"[econ] Launching thread for server {row['id']} ({row['name']})")
+            bot_instances.append(bot)  # keep bot for API bridge
             t = threading.Thread(target=run_bot, args=(bot,), daemon=True)
             threads.append(t)
             t.start()
         else:
             print(f"[econ] Skipping server {row['id']} ({row['name']}) - connection failed.")
+
+    # launch bot API in background
+    threading.Thread(target=start_bot_api, daemon=True).start()
 
     # keep main thread alive
     try:
