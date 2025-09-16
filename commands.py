@@ -195,6 +195,21 @@ class CommandHandler:
             update_balance(self.bot.conn, target["eos"], self.bot.server_id, coins=tdata["coins"] + amt)
             self.bot.pm(eid, f"{COL_OK}Added {amt} coins to {target_name}.{COL_END}")
 
+        elif msg.startswith("/removecoins"):
+            if not is_admin(self.bot.conn, eos):
+                return self.bot.pm(eid, f"{COL_ERR}Not admin.{COL_END}")
+            p = shlex.split(msg)
+            if len(p) < 3:
+                return
+            target_name, amt = p[1], int(p[2])
+            target = next((v for v in self.bot.online.values() if v["name"].lower() == target_name.lower()), None)
+            if not target:
+                return self.bot.pm(eid, f"{COL_ERR}Target not online.{COL_END}")
+            tdata = get_player(self.bot.conn, target["eos"], self.bot.server_id)
+            new_coins = max(0, tdata["coins"] - amt)
+            update_balance(self.bot.conn, target["eos"], self.bot.server_id, coins=new_coins)
+            self.bot.pm(eid, f"{COL_OK}Removed {amt} coins from {target_name}.{COL_END}")
+
         elif msg.startswith("/addgold"):
             if not is_admin(self.bot.conn, eos):
                 return self.bot.pm(eid, f"{COL_ERR}Not admin.{COL_END}")
@@ -209,10 +224,25 @@ class CommandHandler:
             update_balance(self.bot.conn, target["eos"], self.bot.server_id, gold=tdata["gold"] + amt)
             self.bot.pm(eid, f"{COL_OK}Added {amt} gold to {target_name}.{COL_END}")
 
-        elif msg.startswith("/adddonor"):
+        elif msg.startswith("/removegold"):
             if not is_admin(self.bot.conn, eos):
                 return self.bot.pm(eid, f"{COL_ERR}Not admin.{COL_END}")
             p = shlex.split(msg)
+            if len(p) < 3:
+                return
+            target_name, amt = p[1], int(p[2])
+            target = next((v for v in self.bot.online.values() if v["name"].lower() == target_name.lower()), None)
+            if not target:
+                return self.bot.pm(eid, f"{COL_ERR}Target not online.{COL_END}")
+            tdata = get_player(self.bot.conn, target["eos"], self.bot.server_id)
+            new_gold = max(0, tdata["gold"] - amt)
+            update_balance(self.bot.conn, target["eos"], self.bot.server_id, gold=new_gold)
+            self.bot.pm(eid, f"{COL_OK}Removed {amt} gold from {target_name}.{COL_END}")
+
+        elif msg.startswith("/adddonor"):
+            if not is_admin(self.bot.conn, eos):
+                return self.bot.pm(eid, f"{COL_ERR}Not admin.{COL_END}")
+            p = msg.split()
             if len(p) < 3:
                 return self.bot.pm(eid, f"{COL_INFO}Usage: /adddonor <playername> <tier>{COL_END}")
             target_name, tier = p[1], p[2].lower()
@@ -231,18 +261,64 @@ class CommandHandler:
             update_field(self.bot.conn, target["eos"], self.bot.server_id, "multiplier", tierinfo.get("multiplier", 1.0))
             update_field(self.bot.conn, target["eos"], self.bot.server_id, "donor", tier)
 
-            # Notify player
             self.bot.pm(target["eid"], f"{COL_OK}You have been granted Donor Tier {tier.upper()}!{COL_END}")
             self.bot.pm(target["eid"], f"{COL_GOLD}+{tierinfo.get('coins',0)} coins, +{tierinfo.get('gold',0)} gold, Multiplier set to x{tierinfo.get('multiplier',1.0)}{COL_END}")
             self.bot.pm(target["eid"], f"{COL_INFO}Use /donor to claim your donor pack.{COL_END}")
-
-            # Notify admin
             self.bot.pm(eid, f"{COL_OK}{target_name} is now a Donor {tier.upper()}.{COL_END}")
+
+        elif msg.startswith("/removedonor"):
+            if not is_admin(self.bot.conn, eos):
+                return self.bot.pm(eid, f"{COL_ERR}Not admin.{COL_END}")
+            p = msg.split()
+            if len(p) < 2:
+                return self.bot.pm(eid, f"{COL_INFO}Usage: /removedonor <playername>{COL_END}")
+            target_name = p[1]
+            target = next((v for v in self.bot.online.values() if v["name"].lower() == target_name.lower()), None)
+            if not target:
+                return self.bot.pm(eid, f"{COL_ERR}Target not online.{COL_END}")
+            update_field(self.bot.conn, target["eos"], self.bot.server_id, "donor", "None")
+            update_field(self.bot.conn, target["eos"], self.bot.server_id, "multiplier", 1.0)
+            self.bot.pm(target["eid"], f"{COL_WARN}Your donor status has been revoked.{COL_END}")
+            self.bot.pm(eid, f"{COL_OK}{target_name}'s donor status removed.{COL_END}")
+
+        elif msg.startswith("/checkplayer"):
+            if not is_admin(self.bot.conn, eos):
+                return self.bot.pm(eid, f"{COL_ERR}Not admin.{COL_END}")
+            p = msg.split()
+            if len(p) < 2:
+                return self.bot.pm(eid, f"{COL_INFO}Usage: /checkplayer <playername>{COL_END}")
+            target_name = p[1].lower()
+            target = next((v for v in self.bot.online.values() if v["name"].lower() == target_name), None)
+            if not target:
+                return self.bot.pm(eid, f"{COL_ERR}Target not online.{COL_END}")
+            pdata = get_player(self.bot.conn, target["eos"], self.bot.server_id)
+            donor = pdata.get("donor", "None")
+            mult = pdata.get("multiplier", 1.0)
+            coins = pdata.get("coins", 0)
+            gold = pdata.get("gold", 0)
+            streak = pdata.get("streak", 0)
+            last_daily = pdata.get("last_daily", 0)
+            last_gimme = pdata.get("last_gimme", 0)
+            self.bot.pm(eid, f"{COL_INFO}--- Player Info: {target_name} ---{COL_END}")
+            self.bot.pm(eid, f"Coins: {coins}, Gold: {gold}, Mult: x{mult}, Donor: {donor}")
+            self.bot.pm(eid, f"Streak: {streak}, Last Daily: {last_daily}, Last Gimme: {last_gimme}")
+
+        elif msg.startswith("/clearpackuse"):
+            if not is_admin(self.bot.conn, eos):
+                return self.bot.pm(eid, f"{COL_ERR}Not admin.{COL_END}")
+            p = msg.split()
+            if len(p) < 2:
+                return self.bot.pm(eid, f"{COL_INFO}Usage: /clearpackuse <playername>{COL_END}")
+            target_name = p[1]
+            target = next((v for v in self.bot.online.values() if v["name"].lower() == target_name.lower()), None)
+            if not target:
+                return self.bot.pm(eid, f"{COL_ERR}Target not online.{COL_END}")
+            update_field(self.bot.conn, target["eos"], self.bot.server_id, "starter_used", 0)
+            update_field(self.bot.conn, target["eos"], self.bot.server_id, "donor", "None")
+            self.bot.pm(eid, f"{COL_OK}Cleared pack usage for {target_name}.{COL_END}")
 
         elif msg.startswith("/addadmin"):
             p = shlex.split(msg)
-
-            # Only bootstrap via master password
             if len(p) == 2:
                 password = p[1]
                 master_pw = get_master_password(self.bot.conn)
@@ -251,7 +327,6 @@ class CommandHandler:
                     return self.bot.pm(eid, f"{COL_OK}{name} promoted to Admin using master password!{COL_END}")
                 else:
                     return self.bot.pm(eid, f"{COL_ERR}Invalid master password.{COL_END}")
-
             return self.bot.pm(eid, f"{COL_INFO}Usage: /addadmin <masterpassword>{COL_END}")
 
         elif msg.startswith("/addadmins"):
