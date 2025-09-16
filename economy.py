@@ -25,6 +25,7 @@ class EconomyBot:
     def connect(self):
         """Connect to the 7DTD server via Telnet."""
         try:
+            print(f"[econ][{self.server_id} - {self.name}] Connecting to {self.host}:{self.port}...")
             self.tn = telnetlib.Telnet(self.host, int(self.port))
             self.tn.read_until(b"Please enter password:")
             self.tn.write(self.password.encode("utf-8") + b"\n")
@@ -139,8 +140,10 @@ def main():
     # launch one thread per server
     threads = []
     for row in rows:
+        print(f"[econ] Attempting connection to server {row['id']} ({row['name']}) at {row['ip']}:{row['port']}")
         bot = EconomyBot(row["id"], row["name"], row["ip"], row["port"], row["password"], conn)
         if bot.connect():
+            print(f"[econ] Launching thread for server {row['id']} ({row['name']})")
             t = threading.Thread(target=run_bot, args=(bot,), daemon=True)
             threads.append(t)
             t.start()
