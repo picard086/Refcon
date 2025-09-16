@@ -182,15 +182,20 @@ async def run_command(request: Request):
     if target_server:
         bots = [b for b in bot_instances if str(b.server_id) == str(target_server)]
 
-    for bot in bots:
-        try:
-            # make sure WebAdmin exists in online list
-            bot.online[0] = {"name": "WebAdmin", "eos": "WebAdmin"}
+for bot in bots:
+    try:
+        # fully populate WebAdmin record
+        bot.online[0] = {
+            "name": "WebAdmin",
+            "eos": "WebAdmin",
+            "steam": "WebAdmin"
+        }
 
-            # pass eos explicitly
-            bot.cmd_handler.dispatch(cmd, 0, "WebAdmin", "WebAdmin")
-        except Exception as e:
-            return {"status": "error", "msg": str(e)}
+        # pass eos explicitly
+        bot.cmd_handler.dispatch(cmd, 0, "WebAdmin", "WebAdmin")
+    except Exception as e:
+        return {"status": "error", "msg": str(e)}
+
 
     return {"status": "ok", "cmd": cmd, "servers": [b.server_id for b in bots]}
 
@@ -238,3 +243,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
