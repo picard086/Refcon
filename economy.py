@@ -158,7 +158,7 @@ async def run_command(request: Request):
     return {"status": "ok", "cmd": cmd, "servers": [b.server_id for b in bots]}
 
 def start_bot_api():
-    uvicorn.run(bot_api, host="127.0.0.1", port=8899, log_level="info")
+    uvicorn.run(bot_api, host="0.0.0.0", port=8848, log_level="info")
 
 
 def main():
@@ -200,3 +200,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
