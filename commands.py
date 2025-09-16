@@ -305,6 +305,7 @@ class CommandHandler:
             if not target:
                 return self.bot.pm(eid, f"{COL_ERR}Target not online.{COL_END}")
             pp = get_player(self.bot.conn, target["eos"], self.bot.server_id)
+
             donor = pp.get("donor", "None")
             mult = pp.get("multiplier", 1.0)
             coins = pp.get("coins", 0)
@@ -312,9 +313,13 @@ class CommandHandler:
             streak = pp.get("streak", 0)
             last_daily = pp.get("last_daily", 0)
             last_gimme = pp.get("last_gimme", 0)
-            donor_used = pp.get("donor_used", 0)
+
+            donor_used = "Yes" if pp.get("donor_used", 0) else "No"
+            starter_used = "Yes" if pp.get("starter_used", 0) else "No"
+
             self.bot.pm(eid, f"{COL_INFO}--- Player Info: {target_name} ---{COL_END}")
-            self.bot.pm(eid, f"Coins: {coins}, Gold: {gold}, Mult: x{mult}, Donor: {donor}, DonorUsed: {donor_used}")
+            self.bot.pm(eid, f"Coins: {coins}, Gold: {gold}, Mult: x{mult}, Donor Tier: {donor}")
+            self.bot.pm(eid, f"Donor Pack Claimed: {donor_used}, Starter Kit Claimed: {starter_used}")
             self.bot.pm(eid, f"Streak: {streak}, Last Daily: {last_daily}, Last Gimme: {last_gimme}")
 
         elif msg.startswith("/clearpackuse"):
@@ -396,3 +401,4 @@ class CommandHandler:
                     self.bot.pm(eid, f"{COL_WARN}No vote found yet.{COL_END}")
             except Exception:
                 self.bot.pm(eid, f"{COL_ERR}Vote check failed.{COL_END}")
+
