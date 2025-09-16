@@ -116,8 +116,7 @@ class EconomyBot:
 def run_bot(bot: EconomyBot):
     """Run one bot in its own thread."""
     bot.admins = load_admins()
-
-    # ensure WebAdmin is always an admin for API commands
+    # Make sure WebAdmin is always trusted
     if "WebAdmin" not in bot.admins:
         bot.admins.append("WebAdmin")
 
@@ -154,8 +153,8 @@ async def run_command(request: Request):
 
     for bot in bots:
         try:
-            # Dispatch command as if run by WebAdmin
-            bot.cmd_handler.dispatch(cmd, 0, "WebAdmin")
+            # Pass eos explicitly
+            bot.cmd_handler.dispatch(cmd, 0, "WebAdmin", "WebAdmin")
         except Exception as e:
             return {"status": "error", "msg": str(e)}
 
