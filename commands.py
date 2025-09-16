@@ -264,27 +264,53 @@ class CommandHandler:
             p = msg.split()
             if len(p) < 3:
                 return self.bot.pm(eid, f"{COL_INFO}Usage: /adddonor <playername> <tier>{COL_END}")
+
             target_name, tier = p[1], p[2].lower()
             if tier not in DONOR_TIERS:
-                return self.bot.pm(eid, f"{COL_ERR}Invalid donor tier. Available: {', '.join(DONOR_TIERS.keys())}{COL_END}")
+                return self.bot.pm(
+                    eid,
+                    f"{COL_ERR}Invalid donor tier. Available: {', '.join(DONOR_TIERS.keys())}{COL_END}"
+                )
+
             teid, target = self._find_online_by_name(target_name.lower())
-            if not target:
-                return self.bot.pm(eid, f"{COL_ERR}Target not online.{COL_END}")
-
-            tdata = get_player(self.bot.conn, target["eos"], self.bot.server_id)
             tierinfo = DONOR_TIERS[tier]
-            new_coins = tdata["coins"] + tierinfo.get("coins", 0)
-            new_gold = tdata["gold"] + tierinfo.get("gold", 0)
-            update_balance(self.bot.conn, target["eos"], self.bot.server_id, coins=new_coins, gold=new_gold)
-            update_field(self.bot.conn, target["eos"], self.bot.server_id, "multiplier", tierinfo.get("multiplier", 1.0))
-            update_field(self.bot.conn, target["eos"], self.bot.server_id, "donor", tier)
-            update_field(self.bot.conn, target["eos"], self.bot.server_id, "donor_used", 0)
 
-            # Notify player + admin
-            self.bot.pm(teid, f"{COL_OK}You have been granted Donor Tier {tier.upper()}!{COL_END}")
-            self.bot.pm(teid, f"{COL_GOLD}+{tierinfo.get('coins',0)} coins, +{tierinfo.get('gold',0)} gold, Multiplier set to x{tierinfo.get('multiplier',1.0)}{COL_END}")
-            self.bot.pm(teid, f"{COL_INFO}Use /donor to claim your donor pack.{COL_END}")
-            self.bot.pm(eid, f"{COL_OK}{target_name} is now a Donor {tier.upper()}.{COL_END}")
+            if target:
+                # --- Online path (notify player + admin) ---
+                tdata = get_player(self.bot.conn, target["eos"], self.bot.server_id)
+                new_coins = tdata["coins"] + tierinfo.get("coins", 0)
+                new_gold = tdata["gold"] + tierinfo.get("gold", 0)
+                update_balance(self.bot.conn, target["eos"], self.bot.server_id,
+                               coins=new_coins, gold=new_gold)
+                update_field(self.bot.conn, target["eos"], self.bot.server_id,
+                             "multiplier", tierinfo.get("multiplier", 1.0))
+                update_field(self.bot.conn, target["eos"], self.bot.server_id,
+                             "donor", tier)
+                update_field(self.bot.conn, target["eos"], self.bot.server_id,
+                             "donor_used", 0)
+
+                self.bot.pm(teid, f"{COL_OK}You have been granted Donor Tier {tier.upper()}!{COL_END}")
+                self.bot.pm(teid, f"{COL_GOLD}+{tierinfo.get('coins',0)} coins, +{tierinfo.get('gold',0)} gold, "
+                                   f"Multiplier set to x{tierinfo.get('multiplier',1.0)}{COL_END}")
+                self.bot.pm(teid, f"{COL_INFO}Use /donor to claim your donor pack.{COL_END}")
+                self.bot.pm(eid, f"{COL_OK}{target_name} is now a Donor {tier.upper()}.{COL_END}")
+
+            else:
+                # --- Offline path (update DB, notify admin only) ---
+                pp = get_player(self.bot.conn, target_name, self.bot.server_id, target_name)
+                new_coins = pp["coins"] + tierinfo.get("coins", 0)
+                new_gold = pp["gold"] + tierinfo.get("gold", 0)
+                update_balance(self.bot.conn, pp["eos"], self.bot.server_id,
+                               coins=new_coins, gold=new_gold)
+                update_field(self.bot.conn, pp["eos"], self.bot.server_id,
+                             "multiplier", tierinfo.get("multiplier", 1.0))
+                update_field(self.bot.conn, pp["eos"], self.bot.server_id,
+                             "donor", tier)
+                update_field(self.bot.conn, pp["eos"], self.bot.server_id,
+                             "donor_used", 0)
+
+                self.bot.pm(eid, f"{COL_OK}{target_name} (offline) is now a Donor {tier.upper()}.{COL_END}")
+
 
         elif msg.startswith("/removedonor"):
             if not is_admin(self.bot.conn, eos):
@@ -409,5 +435,6 @@ class CommandHandler:
                     self.bot.pm(eid, f"{COL_WARN}No vote found yet.{COL_END}")
             except Exception:
                 self.bot.pm(eid, f"{COL_ERR}Vote check failed.{COL_END}")
+
 
 
