@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Refuge Economy Admin Panel</title>
+</head>
+<body>
+  <h1>Refuge Admin Panel</h1>
+
+  {% if msg %}
+    <p><strong>{{ msg }}</strong></p>
+  {% endif %}
+
+  <form method="post" action="/web_adddonor">
+    <h2>Add Donor</h2>
+    <label>Player <input type="text" name="player" required></label><br>
+    <label>Tier <input type="text" name="tier" placeholder="t1/t2/t3..." required></label><br>
+    <label>Server ID <input type="number" name="server_id" required></label><br>
+    <button type="submit">Add Donor</button>
+  </form>
+</body>
+</html>
