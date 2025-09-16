@@ -60,8 +60,7 @@ class EconomyBot:
             if message.strip().startswith("/"):
                 self.cmd_handler.dispatch(message.strip(), eid, name)
 
-
-        # Position update (PlayerSpawnedInWorld or similar)
+        # Position update from spawn log
         pos_match = re.search(r"PlayerSpawnedInWorld.*at \(([-\d\.]+), ([-\d\.]+), ([-\d\.]+)\)", line)
         if pos_match:
             x, y, z = map(float, pos_match.groups())
@@ -71,6 +70,19 @@ class EconomyBot:
                 for eid, pdata in self.online.items():
                     if pdata.get("eos") == eos:
                         pdata["pos"] = (x, y, z)
+
+        # Position update from `lp` (listplayers) output
+        lp_match = re.search(r"id=(\d+).*name=([^,]+).*pos=\(([-\d]+), ([-\d]+), ([-\d]+)\)", line)
+        if lp_match:
+            eid = int(lp_match[1])
+            name = lp_match[2].strip()
+            x, y, z = int(lp_match[3]), int(lp_match[4]), int(lp_match[5])
+            if eid not in self.online:
+                self.online[eid] = {}
+            self.online[eid].update({
+                "name": name,
+                "pos": (x, y, z)
+            })
 
     def poll(self, scheduler):
         """Poll Telnet messages and feed them to command handler."""
@@ -110,8 +122,9 @@ def main():
     # load admins
     bot.admins = load_admins()
 
-    # scheduler
+    # scheduler (handles income + lp updates)
     scheduler = Scheduler(bot)
+    scheduler.start()
 
     try:
         while True:
@@ -120,8 +133,8 @@ def main():
             time.sleep(1)
     except KeyboardInterrupt:
         print("[econ] Shutting down bot...")
+        scheduler.stop()
 
 
 if __name__ == "__main__":
     main()
-
