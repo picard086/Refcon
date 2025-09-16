@@ -1,10 +1,10 @@
-# constants.py
+# ---------------- Donor System ----------------
 
 DONOR_TIERS = {
-    "t1": {"slots": 3, "mult": 1.25, "bonus_coins": 1000, "bonus_gold": 1},
-    "t2": {"slots": 6, "mult": 1.5,  "bonus_coins": 2000, "bonus_gold": 2},
-    "t3": {"slots": 9, "mult": 1.75, "bonus_coins": 3000, "bonus_gold": 3},
-    "t4": {"slots": 12,"mult": 2.0,  "bonus_coins": 4000,"bonus_gold": 4},
+    "t1": {"slots": 3, "mult": 1.25, "bonus_coins": 1000, "bonus_gold": 1, "label": "Bronze"},
+    "t2": {"slots": 6, "mult": 1.5,  "bonus_coins": 2000, "bonus_gold": 2, "label": "Silver"},
+    "t3": {"slots": 9, "mult": 1.75, "bonus_coins": 3000, "bonus_gold": 3, "label": "Gold"},
+    "t4": {"slots": 12,"mult": 2.0,  "bonus_coins": 4000,"bonus_gold": 4, "label": "Platinum"},
 }
 
 DONOR_PACK = [
@@ -13,7 +13,11 @@ DONOR_PACK = [
     {"name": "resourceWoodBundle", "amount": 1},
     {"name": "questRewardT1SkillMagazineBundle", "amount": 2},
     {"name": "ammo9mmBulletBall", "amount": 300},
+    {"name": "ammo762mmBulletBall", "amount": 300},
+    {"name": "medicalFirstAidKit", "amount": 2},
 ]
+
+# ---------------- Starter & Rewards ----------------
 
 STARTER_PACK = [
     {"name": "drinkJarYuccaJuice", "amount": 10},
@@ -30,6 +34,17 @@ GIMME_REWARDS = [
     {"name": "qt_jennifer", "friendly": "Jennifer's Treasure Map", "amount": 1},
     {"name": "resourceRepairKitImp", "friendly": "Improved Repair Kit", "amount": 1},
 ]
+
+SOIL_REWARD = {"name": "resourceFertilizer", "friendly": "Soil", "amount": 50}
+
+# ---------------- Vehicle Recall ----------------
+
+VEHICLE_COMMANDS = {
+    "bike": "getbike",
+    "4x4": "get4x4",
+    "gyro": "getgyrocopter",
+    "drone": "getdrone",
+}
 
 # ---------------- Hardwired Shops ----------------
 
