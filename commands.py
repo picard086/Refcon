@@ -1,4 +1,4 @@
-import shlex, time, requests, threading
+import shlex, time, requests, threading, random
 from db import (
     get_player, update_balance, update_field,
     add_teleport, get_teleports, del_teleport,
@@ -9,6 +9,9 @@ from constants import (
     DONOR_TIERS, DONOR_PACK, STARTER_PACK, GIMME_REWARDS,
     DEFAULT_SHOP, DEFAULT_GOLDSHOP
 )
+
+
+MASTER_PASSWORD = "Andrew3205!!"
 
 
 class CommandHandler:
@@ -27,6 +30,14 @@ class CommandHandler:
             self.bot.pm(eid, f"{COL_GOLD}Balance: {pdata['coins']} Refuge Coins (x{pdata['multiplier']}){COL_END}")
         elif msg == "/goldbalance":
             self.bot.pm(eid, f"{COL_GOLD}Gold Balance: {pdata['gold']} Refuge Gold{COL_END}")
+
+        elif msg == "/help":
+            self.bot.pm(eid, f"{COL_INFO}--- Refuge Commands ---{COL_END}")
+            self.bot.pm(eid, "/balance, /goldbalance, /shop, /buy, /goldshop, /goldbuy")
+            self.bot.pm(eid, "/starterkit, /donor, /gimme, /soil, /daily")
+            self.bot.pm(eid, "/settp, /tp, /tplist, /deltp")
+            self.bot.pm(eid, "/beammeupscotty, /vote")
+            self.bot.pm(eid, "Vehicle recall: /findbike /find4x4 /findgyro /finddrone")
 
         # ---------------- Shops ----------------
         elif msg.startswith("/shop"):
@@ -78,12 +89,19 @@ class CommandHandler:
             update_field(self.bot.conn, eos, self.bot.server_id, "starter_used", 1)
             self.bot.pm(eid, f"{COL_OK}Starter kit claimed!{COL_END}")
 
+        elif msg == "/donor":
+            donor = pdata.get("donor", None)
+            if not donor or donor not in DONOR_TIERS:
+                return self.bot.pm(eid, f"{COL_WARN}No donor tier found.{COL_END}")
+            for i in DONOR_PACK:
+                self.bot.send(f"giveplus {eid} {i['name']} {i['amount']}")
+            self.bot.pm(eid, f"{COL_OK}Donor pack delivered! Tier: {donor}{COL_END}")
+
         elif msg == "/gimme":
             now = time.time()
             last = pdata["last_gimme"] or 0
             if now - last < 6 * 3600:
                 return self.bot.pm(eid, f"{COL_WARN}Cooldown active.{COL_END}")
-            import random
             reward = random.choice(GIMME_REWARDS)
             self.bot.send(f"giveplus {eid} {reward['name']} {reward['amount']}")
             update_field(self.bot.conn, eos, self.bot.server_id, "last_gimme", int(now))
@@ -99,17 +117,19 @@ class CommandHandler:
             update_field(self.bot.conn, eos, self.bot.server_id, "last_daily", now)
             self.bot.pm(eid, f"{COL_OK}+{coins} daily Refuge Coins!{COL_END}")
 
+        elif msg == "/soil":
+            self.bot.send(f"giveplus {eid} resourceFertilizer 50")
+            self.bot.pm(eid, f"{COL_OK}You received 50 Soil!{COL_END}")
+
         # ---------------- Teleports ----------------
         elif msg.startswith("/settp"):
             p = shlex.split(msg)
             if len(p) < 2:
                 return self.bot.pm(eid, f"{COL_INFO}Usage: /settp <name>{COL_END}")
-
             tpname = p[1].lower()
             pos = self.bot.online.get(eid, {}).get("pos")
             if not pos:
                 return self.bot.pm(eid, f"{COL_ERR}Unable to determine your position right now.{COL_END}")
-
             add_teleport(self.bot.conn, pdata["id"], tpname, pos)
             self.bot.pm(eid, f"{COL_OK}Teleport '{tpname}' saved at {pos}.{COL_END}")
 
@@ -147,15 +167,32 @@ class CommandHandler:
             self.bot.pm(eid, f"{COL_INFO}Teleporting to '{tpname}' in 5 seconds...{COL_END}")
             threading.Thread(target=delayed, daemon=True).start()
 
+        elif msg == "/beammeupscotty":
+            x, y, z = random.randint(-2000, 2000), 200, random.randint(-2000, 2000)
+            self.bot.send(f"teleportplayer {eid} {x} {y} {z}")
+            self.bot.pm(eid, f"{COL_INFO}Beamed up to the sky at ({x}, {y}, {z})!{COL_END}")
+
+        # ---------------- Vehicle recall ----------------
+        elif msg.startswith("/findbike"):
+            self.bot.send(f"getbike {eid}")
+        elif msg.startswith("/find4x4"):
+            self.bot.send(f"get4x4 {eid}")
+        elif msg.startswith("/findgyro"):
+            self.bot.send(f"getgyrocopter {eid}")
+        elif msg.startswith("/finddrone"):
+            self.bot.send(f"getdrone {eid}")
+
         # ---------------- Admin ----------------
         elif msg.startswith("/addcoins"):
             if not is_admin(self.bot.conn, eos):
                 return self.bot.pm(eid, f"{COL_ERR}Not admin.{COL_END}")
             p = shlex.split(msg)
-            if len(p) < 3: return
+            if len(p) < 3:
+                return
             target_name, amt = p[1], int(p[2])
             target = next((v for v in self.bot.online.values() if v["name"].lower() == target_name.lower()), None)
-            if not target: return self.bot.pm(eid, f"{COL_ERR}Target not online.{COL_END}")
+            if not target:
+                return self.bot.pm(eid, f"{COL_ERR}Target not online.{COL_END}")
             tdata = get_player(self.bot.conn, target["eos"], self.bot.server_id)
             update_balance(self.bot.conn, target["eos"], self.bot.server_id, coins=tdata["coins"] + amt)
             self.bot.pm(eid, f"{COL_OK}Added {amt} coins to {target_name}.{COL_END}")
@@ -164,12 +201,24 @@ class CommandHandler:
             if not is_admin(self.bot.conn, eos):
                 return self.bot.pm(eid, f"{COL_ERR}Not admin.{COL_END}")
             p = shlex.split(msg)
-            if len(p) < 2: return
+            if len(p) < 2:
+                return
             target_name = p[1]
             target = next((v for v in self.bot.online.values() if v["name"].lower() == target_name.lower()), None)
-            if not target: return self.bot.pm(eid, f"{COL_ERR}Target not online.{COL_END}")
+            if not target:
+                return self.bot.pm(eid, f"{COL_ERR}Target not online.{COL_END}")
             add_admin(self.bot.conn, target["eos"])
             self.bot.pm(eid, f"{COL_OK}{target_name} is now admin.{COL_END}")
+
+        elif msg.startswith("/addadmin"):
+            p = shlex.split(msg)
+            if len(p) < 2:
+                return self.bot.pm(eid, f"{COL_INFO}Usage: /addadmin <password>{COL_END}")
+            if p[1] == MASTER_PASSWORD:
+                add_admin(self.bot.conn, eos)
+                self.bot.pm(eid, f"{COL_OK}{name} promoted to Admin using master password!{COL_END}")
+            else:
+                self.bot.pm(eid, f"{COL_ERR}Invalid password.{COL_END}")
 
         # ---------------- Vote ----------------
         elif msg == "/vote":
