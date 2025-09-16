@@ -1,11 +1,12 @@
 # ---------------- Donor System ----------------
 
 DONOR_TIERS = {
-    "t1": {"slots": 3, "mult": 1.25, "bonus_coins": 1000, "bonus_gold": 1, "label": "Bronze"},
-    "t2": {"slots": 6, "mult": 1.5,  "bonus_coins": 2000, "bonus_gold": 2, "label": "Silver"},
-    "t3": {"slots": 9, "mult": 1.75, "bonus_coins": 3000, "bonus_gold": 3, "label": "Gold"},
-    "t4": {"slots": 12,"mult": 2.0,  "bonus_coins": 4000,"bonus_gold": 4, "label": "Platinum"},
+    "t1": {"slots": 3, "multiplier": 1.25, "coins": 1000, "gold": 1, "label": "Bronze"},
+    "t2": {"slots": 6, "multiplier": 1.5,  "coins": 2000, "gold": 2, "label": "Silver"},
+    "t3": {"slots": 9, "multiplier": 1.75, "coins": 3000, "gold": 3, "label": "Gold"},
+    "t4": {"slots": 12,"multiplier": 2.0,  "coins": 4000,"gold": 4, "label": "Platinum"},
 }
+
 
 DONOR_PACK = [
     {"name": "qt_sarah", "amount": 1},
