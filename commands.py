@@ -1,4 +1,4 @@
-import shlex, time, requests, threading, random, datetime
+import shlex, time, requests, threading, random
 from db import (
     get_player, update_balance, update_field,
     add_teleport, get_teleports, del_teleport,
@@ -23,11 +23,6 @@ class CommandHandler:
             if rec.get("name", "").lower() == name_lower:
                 return teid, rec
         return None, None
-
-    def _format_time(self, ts):
-        if not ts:
-            return "Never"
-        return datetime.datetime.fromtimestamp(int(ts)).strftime("%I:%M%p").lstrip("0").lower()
 
     def dispatch(self, msg: str, eid: int, name: str):
         """Handle a parsed chat command from a player."""
@@ -104,11 +99,8 @@ class CommandHandler:
             donor = pdata.get("donor", None)
             if not donor or donor not in DONOR_TIERS:
                 return self.bot.pm(eid, f"{COL_WARN}No donor tier found.{COL_END}")
-            if pdata.get("donor_pack_used", 0):
-                return self.bot.pm(eid, f"{COL_WARN}You already claimed your donor pack.{COL_END}")
             for i in DONOR_PACK:
                 self.bot.send(f"giveplus {eid} {i['name']} {i['amount']}")
-            update_field(self.bot.conn, eos, self.bot.server_id, "donor_pack_used", 1)
             self.bot.pm(eid, f"{COL_OK}Donor pack delivered! Tier: {donor}{COL_END}")
 
         elif msg == "/gimme":
@@ -173,7 +165,7 @@ class CommandHandler:
 
             def delayed():
                 time.sleep(5)
-                x, y, z = int(float(tp["x"])), int(float(tp["y"])), int(float(tp["z"])}
+                x, y, z = int(float(tp["x"])), int(float(tp["y"])), int(float(tp["z"]))
                 self.bot.send(f"teleportplayer {eid} {x} {y} {z}")
                 self.bot.pm(eid, f"{COL_GOLD}Teleported to '{tpname}' at ({x}, {y}, {z}).{COL_END}")
                 self.bot.send(f"getdrone {eid}")
@@ -189,16 +181,12 @@ class CommandHandler:
         # ---------------- Vehicle recall ----------------
         elif msg.startswith("/findbike"):
             self.bot.send(f"getbike {eid}")
-            self.bot.pm(eid, f"{COL_INFO}Your bike has been recalled.{COL_END}")
         elif msg.startswith("/find4x4"):
             self.bot.send(f"get4x4 {eid}")
-            self.bot.pm(eid, f"{COL_INFO}Your 4x4 has been recalled.{COL_END}")
         elif msg.startswith("/findgyro"):
             self.bot.send(f"getgyrocopter {eid}")
-            self.bot.pm(eid, f"{COL_INFO}Your gyrocopter has been recalled.{COL_END}")
         elif msg.startswith("/finddrone"):
             self.bot.send(f"getdrone {eid}")
-            self.bot.pm(eid, f"{COL_INFO}Your drone has been recalled.{COL_END}")
 
         # ---------------- Admin ----------------
         elif msg.startswith("/addcoins"):
@@ -273,19 +261,16 @@ class CommandHandler:
                 return self.bot.pm(eid, f"{COL_ERR}Target not online.{COL_END}")
 
             tdata = get_player(self.bot.conn, target["eos"], self.bot.server_id)
-            if tdata.get("donor") and tdata["donor"] != "None":
-                return self.bot.pm(eid, f"{COL_ERR}{target_name} is already a donor. Remove their donor first.{COL_END}")
-
             tierinfo = DONOR_TIERS[tier]
-            update_balance(self.bot.conn, target["eos"], self.bot.server_id,
-                           coins=tdata["coins"] + tierinfo.get("bonus_coins", 0),
-                           gold=tdata["gold"] + tierinfo.get("bonus_gold", 0))
-            update_field(self.bot.conn, target["eos"], self.bot.server_id, "multiplier", tierinfo.get("mult", 1.0))
+            new_coins = tdata["coins"] + tierinfo.get("coins", 0)
+            new_gold = tdata["gold"] + tierinfo.get("gold", 0)
+            update_balance(self.bot.conn, target["eos"], self.bot.server_id, coins=new_coins, gold=new_gold)
+            update_field(self.bot.conn, target["eos"], self.bot.server_id, "multiplier", tierinfo.get("multiplier", 1.0))
             update_field(self.bot.conn, target["eos"], self.bot.server_id, "donor", tier)
-            update_field(self.bot.conn, target["eos"], self.bot.server_id, "donor_pack_used", 0)
 
+            # Notify player + admin
             self.bot.pm(teid, f"{COL_OK}You have been granted Donor Tier {tier.upper()}!{COL_END}")
-            self.bot.pm(teid, f"{COL_GOLD}+{tierinfo['bonus_coins']} coins, +{tierinfo['bonus_gold']} gold, Multiplier set to x{tierinfo['mult']}{COL_END}")
+            self.bot.pm(teid, f"{COL_GOLD}+{tierinfo.get('coins',0)} coins, +{tierinfo.get('gold',0)} gold, Multiplier set to x{tierinfo.get('multiplier',1.0)}{COL_END}")
             self.bot.pm(teid, f"{COL_INFO}Use /donor to claim your donor pack.{COL_END}")
             self.bot.pm(eid, f"{COL_OK}{target_name} is now a Donor {tier.upper()}.{COL_END}")
 
@@ -301,7 +286,6 @@ class CommandHandler:
                 return self.bot.pm(eid, f"{COL_ERR}Target not online.{COL_END}")
             update_field(self.bot.conn, target["eos"], self.bot.server_id, "donor", "None")
             update_field(self.bot.conn, target["eos"], self.bot.server_id, "multiplier", 1.0)
-            update_field(self.bot.conn, target["eos"], self.bot.server_id, "donor_pack_used", 0)
             self.bot.pm(teid, f"{COL_WARN}Your donor status has been revoked.{COL_END}")
             self.bot.pm(eid, f"{COL_OK}{target_name}'s donor status removed.{COL_END}")
 
@@ -321,8 +305,8 @@ class CommandHandler:
             coins = pp.get("coins", 0)
             gold = pp.get("gold", 0)
             streak = pp.get("streak", 0)
-            last_daily = self._format_time(pp.get("last_daily", 0))
-            last_gimme = self._format_time(pp.get("last_gimme", 0))
+            last_daily = pp.get("last_daily", 0)
+            last_gimme = pp.get("last_gimme", 0)
             self.bot.pm(eid, f"{COL_INFO}--- Player Info: {target_name} ---{COL_END}")
             self.bot.pm(eid, f"Coins: {coins}, Gold: {gold}, Mult: x{mult}, Donor: {donor}")
             self.bot.pm(eid, f"Streak: {streak}, Last Daily: {last_daily}, Last Gimme: {last_gimme}")
@@ -331,12 +315,15 @@ class CommandHandler:
             if not is_admin(self.bot.conn, eos):
                 return self.bot.pm(eid, f"{COL_ERR}Not admin.{COL_END}")
 
+            # Accept either order: /clearpackuse <player> [starterkit|donor|both]
+            # or:                    /clearpackuse [starterkit|donor|both] <player>
             toks = msg.split()
             if len(toks) < 2:
                 return self.bot.pm(eid, f"{COL_INFO}Usage: /clearpackuse <playername> [starterkit|donor|both]{COL_END}")
 
             args = [a.lower() for a in toks[1:]]
             mode = "both"
+            # find mode
             for m in ("starterkit", "donor", "both"):
                 if m in args:
                     mode = m
@@ -355,12 +342,12 @@ class CommandHandler:
             if mode in ("donor", "both"):
                 update_field(self.bot.conn, target["eos"], self.bot.server_id, "donor", "None")
                 update_field(self.bot.conn, target["eos"], self.bot.server_id, "multiplier", 1.0)
-                update_field(self.bot.conn, target["eos"], self.bot.server_id, "donor_pack_used", 0)
 
             self.bot.pm(eid, f"{COL_OK}Cleared pack usage for {target_name} ({mode}).{COL_END}")
 
         elif msg.startswith("/addadmin"):
             p = shlex.split(msg)
+            # bootstrap via master password
             if len(p) == 2:
                 password = p[1]
                 master_pw = get_master_password(self.bot.conn)
@@ -376,7 +363,7 @@ class CommandHandler:
                 return self.bot.pm(eid, f"{COL_ERR}Not admin.{COL_END}")
             p = shlex.split(msg)
             if len(p) < 2:
-                return self.bot.pm(eid, f"{COL_INFO}Usage: /adminadd <playername>{COL_END}")
+                return self.bot.pm(eid, f"{COL_INFO}Usage: /addadmins <playername>{COL_END}")
             target_name = p[1]
             teid, target = self._find_online_by_name(target_name.lower())
             if not target:
