@@ -1,22 +1,235 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>Refuge Economy Admin Panel</title>
+  <meta charset="UTF-8">
+  <title>Refcon Web Panel</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body>
-  <h1>Refuge Admin Panel</h1>
+<body class="bg-dark text-light">
 
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+  <div class="container-fluid">
+    <a class="navbar-brand fw-bold" href="/">Refcon Control Panel</a>
+  </div>
+</nav>
+
+<div class="container">
   {% if msg %}
-    <p><strong>{{ msg }}</strong></p>
+    <div class="alert alert-info">{{ msg }}</div>
   {% endif %}
 
-  <form method="post" action="/web_adddonor">
-    <h2>Add Donor</h2>
-    <label>Player <input type="text" name="player" required></label><br>
-    <label>Tier <input type="text" name="tier" placeholder="t1/t2/t3..." required></label><br>
-    <label>Server ID <input type="number" name="server_id" required></label><br>
-    <button type="submit">Add Donor</button>
-  </form>
+  <div class="row g-4">
+    <!-- Economy: Add Donor -->
+    <div class="col-md-6">
+      <div class="card bg-secondary shadow">
+        <div class="card-header">Add Donor</div>
+        <div class="card-body">
+          <form method="post" action="/web_adddonor">
+            <input type="text" name="player" class="form-control mb-2" placeholder="Player" required>
+            <select name="tier" class="form-select mb-2" required>
+              <option value="t1">T1</option>
+              <option value="t2">T2</option>
+              <option value="t3">T3</option>
+            </select>
+            <input type="number" name="server_id" class="form-control mb-2" placeholder="Server ID" required>
+            <button type="submit" class="btn btn-primary w-100">Add Donor</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Economy: Add Gold -->
+    <div class="col-md-6">
+      <div class="card bg-secondary shadow">
+        <div class="card-header">Add Gold</div>
+        <div class="card-body">
+          <form method="post" action="/web_addgold">
+            <input type="text" name="player" class="form-control mb-2" placeholder="Player" required>
+            <input type="number" name="amount" class="form-control mb-2" placeholder="Amount" required>
+            <input type="number" name="server_id" class="form-control mb-2" placeholder="Server ID" required>
+            <button type="submit" class="btn btn-warning w-100">Add Gold</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Player: Check -->
+    <div class="col-md-6">
+      <div class="card bg-secondary shadow">
+        <div class="card-header">Check Player</div>
+        <div class="card-body">
+          <form method="post" action="/web_checkplayer">
+            <input type="text" name="player" class="form-control mb-2" placeholder="Player" required>
+            <input type="number" name="server_id" class="form-control mb-2" placeholder="Server ID" required>
+            <button type="submit" class="btn btn-info w-100">Check</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Player: PM -->
+    <div class="col-md-6">
+      <div class="card bg-secondary shadow">
+        <div class="card-header">Send PM</div>
+        <div class="card-body">
+          <form method="post" action="/web_pm">
+            <input type="text" name="player" class="form-control mb-2" placeholder="Player" required>
+            <input type="text" name="message" class="form-control mb-2" placeholder="Message" required>
+            <input type="number" name="server_id" class="form-control mb-2" placeholder="Server ID" required>
+            <button type="submit" class="btn btn-success w-100">Send</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rewards -->
+    <div class="col-md-6">
+      <div class="card bg-secondary shadow">
+        <div class="card-header">Rewards</div>
+        <div class="card-body">
+          <form method="post" action="/run_command">
+            <input type="hidden" name="cmd" value="/gimme">
+            <input type="number" name="server_id" class="form-control mb-2" placeholder="Server ID">
+            <button type="submit" class="btn btn-outline-light w-100">Trigger Gimme</button>
+          </form>
+          <form method="post" action="/run_command" class="mt-2">
+            <input type="hidden" name="cmd" value="/daily">
+            <input type="number" name="server_id" class="form-control mb-2" placeholder="Server ID">
+            <button type="submit" class="btn btn-outline-light w-100">Trigger Daily</button>
+          </form>
+          <form method="post" action="/run_command" class="mt-2">
+            <input type="hidden" name="cmd" value="/vote">
+            <input type="number" name="server_id" class="form-control mb-2" placeholder="Server ID">
+            <button type="submit" class="btn btn-outline-light w-100">Save Vote</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Teleports -->
+    <div class="col-md-6">
+      <div class="card bg-secondary shadow">
+        <div class="card-header">Teleports</div>
+        <div class="card-body">
+          <form method="post" action="/run_command">
+            <input type="text" name="cmd" class="form-control mb-2" placeholder="/settp home">
+            <input type="number" name="server_id" class="form-control mb-2" placeholder="Server ID">
+            <button type="submit" class="btn btn-outline-warning w-100">Set TP</button>
+          </form>
+          <form method="post" action="/run_command" class="mt-2">
+            <input type="hidden" name="cmd" value="/tplist">
+            <input type="number" name="server_id" class="form-control mb-2" placeholder="Server ID">
+            <button type="submit" class="btn btn-outline-warning w-100">List TPs</button>
+          </form>
+          <form method="post" action="/run_command" class="mt-2">
+            <input type="text" name="cmd" class="form-control mb-2" placeholder="/deltp home">
+            <input type="number" name="server_id" class="form-control mb-2" placeholder="Server ID">
+            <button type="submit" class="btn btn-outline-warning w-100">Delete TP</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Shops -->
+    <div class="col-md-6">
+      <div class="card bg-secondary shadow">
+        <div class="card-header">Shops</div>
+        <div class="card-body">
+          <form method="post" action="/run_command">
+            <input type="hidden" name="cmd" value="/shop">
+            <input type="number" name="server_id" class="form-control mb-2" placeholder="Server ID">
+            <button type="submit" class="btn btn-outline-info w-100">Open Shop</button>
+          </form>
+          <form method="post" action="/run_command" class="mt-2">
+            <input type="hidden" name="cmd" value="/goldshop">
+            <input type="number" name="server_id" class="form-control mb-2" placeholder="Server ID">
+            <button type="submit" class="btn btn-outline-info w-100">Open Gold Shop</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Utility -->
+    <div class="col-md-6">
+      <div class="card bg-secondary shadow">
+        <div class="card-header">Utility</div>
+        <div class="card-body">
+          <form method="post" action="/run_command">
+            <input type="text" name="cmd" class="form-control mb-2" placeholder="/say Hello world!">
+            <input type="number" name="server_id" class="form-control mb-2" placeholder="Server ID">
+            <button type="submit" class="btn btn-outline-danger w-100">Broadcast</button>
+          </form>
+          <form method="post" action="/run_command" class="mt-2">
+            <input type="hidden" name="cmd" value="/soil">
+            <input type="number" name="server_id" class="form-control mb-2" placeholder="Server ID">
+            <button type="submit" class="btn btn-outline-danger w-100">Soil Command</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Raw Command -->
+    <div class="col-12">
+      <div class="card bg-dark shadow">
+        <div class="card-header">Raw Command</div>
+        <div class="card-body">
+          <form id="rawForm">
+            <input type="text" id="cmd" class="form-control mb-2" placeholder="/ping" required>
+            <input type="number" id="server_id" class="form-control mb-2" placeholder="Server ID">
+            <button type="submit" class="btn btn-danger w-100">Run</button>
+          </form>
+          <pre id="result" class="mt-3 text-warning"></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- Online Players -->
+    <div class="col-12">
+      <div class="card bg-secondary shadow">
+        <div class="card-header">Online Players</div>
+        <div class="card-body">
+          <table class="table table-dark table-striped">
+            <thead>
+              <tr>
+                <th>EID</th>
+                <th>Name</th>
+                <th>EOS/Steam</th>
+                <th>Position</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for eid, pdata in bots[0].online.items() %}
+              <tr>
+                <td>{{ eid }}</td>
+                <td>{{ pdata.name }}</td>
+                <td>{{ pdata.eos }}</td>
+                <td>{{ pdata.pos if pdata.pos else "?" }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+document.getElementById("rawForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const cmd = document.getElementById("cmd").value;
+  const serverId = document.getElementById("server_id").value;
+  const res = await fetch("/run_command", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({cmd: cmd, server_id: serverId || null})
+  });
+  const data = await res.json();
+  document.getElementById("result").textContent = JSON.stringify(data, null, 2);
+});
+</script>
+
 </body>
 </html>
+
