@@ -145,7 +145,7 @@ templates = Jinja2Templates(directory="templates")
 async def home(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
-# --- Specific function routes ---
+# --- Economy/Admin routes ---
 @bot_api.post("/web_adddonor")
 async def web_adddonor(request: Request, player: str = Form(...), tier: str = Form(...), server_id: int = Form(...)):
     return await _dispatch_command(request, f"/adddonor {player} {tier}", server_id, f"{player} is now donor {tier.upper()}")
@@ -162,17 +162,94 @@ async def web_checkplayer(request: Request, player: str = Form(...), server_id: 
 async def web_pm(request: Request, player: str = Form(...), message: str = Form(...), server_id: int = Form(...)):
     return await _dispatch_command(request, f"/pm {player} {message}", server_id, f"Sent PM to {player}")
 
-# --- Generic JSON command endpoint ---
-@bot_api.post("/run_command")
-async def run_command(request: Request):
-    data = await request.json()
-    cmd = data.get("cmd")
-    target_server = data.get("server_id")
+# --- Rewards ---
+@bot_api.post("/web_gimme")
+async def web_gimme(request: Request, server_id: int = Form(...)):
+    return await _dispatch_command(request, "/gimme", server_id, "Triggered gimme")
 
-    if not cmd:
-        return {"status": "error", "msg": "No command provided"}
+@bot_api.post("/web_daily")
+async def web_daily(request: Request, server_id: int = Form(...)):
+    return await _dispatch_command(request, "/daily", server_id, "Triggered daily")
 
-    return _dispatch_json(cmd, target_server)
+@bot_api.post("/web_vote")
+async def web_vote(request: Request, server_id: int = Form(...)):
+    return await _dispatch_command(request, "/vote", server_id, "Vote saved")
+
+@bot_api.post("/web_starterkit")
+async def web_starterkit(request: Request, player: str = Form(...), server_id: int = Form(...)):
+    return await _dispatch_command(request, f"/starterkit {player}", server_id, f"Gave starter kit to {player}")
+
+@bot_api.post("/web_donorpack")
+async def web_donorpack(request: Request, player: str = Form(...), server_id: int = Form(...)):
+    return await _dispatch_command(request, f"/donor {player}", server_id, f"Gave donor pack to {player}")
+
+# --- Teleports ---
+@bot_api.post("/web_settp")
+async def web_settp(request: Request, player: str = Form(...), tpname: str = Form(...), server_id: int = Form(...)):
+    return await _dispatch_command(request, f"/settp {tpname}", server_id, f"{player} set TP {tpname}")
+
+@bot_api.post("/web_tplist")
+async def web_tplist(request: Request, player: str = Form(...), server_id: int = Form(...)):
+    return await _dispatch_command(request, "/tplist", server_id, f"Listed TPs for {player}")
+
+@bot_api.post("/web_deltp")
+async def web_deltp(request: Request, tpname: str = Form(...), server_id: int = Form(...)):
+    return await _dispatch_command(request, f"/deltp {tpname}", server_id, f"Deleted TP {tpname}")
+
+@bot_api.post("/web_tp")
+async def web_tp(request: Request, player: str = Form(...), tpname: str = Form(...), server_id: int = Form(...)):
+    return await _dispatch_command(request, f"/tp {tpname}", server_id, f"Teleported {player} to {tpname}")
+
+# --- Shops ---
+@bot_api.post("/web_shop")
+async def web_shop(request: Request, server_id: int = Form(...)):
+    return await _dispatch_command(request, "/shop", server_id, "Opened shop")
+
+@bot_api.post("/web_goldshop")
+async def web_goldshop(request: Request, server_id: int = Form(...)):
+    return await _dispatch_command(request, "/goldshop", server_id, "Opened gold shop")
+
+@bot_api.post("/web_buy")
+async def web_buy(request: Request, itemid: int = Form(...), server_id: int = Form(...)):
+    return await _dispatch_command(request, f"/buy {itemid}", server_id, f"Bought item {itemid}")
+
+@bot_api.post("/web_goldbuy")
+async def web_goldbuy(request: Request, itemid: int = Form(...), server_id: int = Form(...)):
+    return await _dispatch_command(request, f"/goldbuy {itemid}", server_id, f"Bought item {itemid} with gold")
+
+# --- Utility ---
+@bot_api.post("/web_soil")
+async def web_soil(request: Request, server_id: int = Form(...)):
+    return await _dispatch_command(request, "/soil", server_id, "Triggered soil command")
+
+@bot_api.post("/web_say")
+async def web_say(request: Request, message: str = Form(...), server_id: int = Form(...)):
+    return await _dispatch_command(request, f"/say {message}", server_id, f"Said: {message}")
+
+@bot_api.post("/web_kick")
+async def web_kick(request: Request, player: str = Form(...), server_id: int = Form(...)):
+    return await _dispatch_command(request, f"/kick {player}", server_id, f"Kicked {player}")
+
+@bot_api.post("/web_ban")
+async def web_ban(request: Request, player: str = Form(...), server_id: int = Form(...)):
+    return await _dispatch_command(request, f"/ban {player}", server_id, f"Banned {player}")
+
+# --- Online players as JSON ---
+@bot_api.get("/online_players")
+async def online_players():
+    data = {}
+    for bot in bot_instances:
+        players = []
+        for eid, pdata in bot.online.items():
+            players.append({
+                "eid": eid,
+                "name": pdata.get("name"),
+                "eos": pdata.get("eos"),
+                "steam": pdata.get("steam"),
+                "pos": pdata.get("pos")
+            })
+        data[bot.server_id] = players
+    return data
 
 
 # --- Shared dispatcher helpers ---
@@ -246,3 +323,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
