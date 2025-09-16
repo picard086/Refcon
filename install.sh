@@ -3,12 +3,12 @@ set -e
 
 echo "=== Refuge Economy Bot Installer ==="
 
-# --- Ask for server details ---
-read -p "Server Name: " SERVER_NAME
-read -p "Server IP: " SERVER_IP
-read -p "RCON Port: " SERVER_PORT
-read -sp "RCON Password: " SERVER_PASS
+# --- Ask for master password ---
+read -sp "Set Master Admin Password: " MASTER_PASS
 echo
+
+# --- Ask how many servers ---
+read -p "How many servers do you want to configure? " SERVER_COUNT
 
 # --- Always make sure sqlite3 is installed ---
 sudo apt update
@@ -40,14 +40,33 @@ pip install requests pytz
 
 # --- Init database ---
 if [ ! -f economy.db ]; then
+  echo "Initializing database schema..."
   sqlite3 economy.db < schema.sql
+else
+  echo "Database already exists, skipping schema init."
+fi
+
+# --- Insert servers ---
+for ((i=1; i<=SERVER_COUNT; i++)); do
+  echo "---- Configuring Server $i ----"
+  read -p "Server Name: " SERVER_NAME
+  read -p "Server IP: " SERVER_IP
+  read -p "RCON Port: " SERVER_PORT
+  read -sp "RCON Password: " SERVER_PASS
+  echo
   sqlite3 economy.db <<EOF
 INSERT INTO servers (name, ip, port, password)
 VALUES ("$SERVER_NAME", "$SERVER_IP", $SERVER_PORT, "$SERVER_PASS");
 EOF
-else
-  echo "Database already exists, skipping schema init."
-fi
+done
+
+# --- Store master password in admins table ---
+# NOTE: You could hash this for security, but keeping plaintext for now.
+sqlite3 economy.db <<EOF
+CREATE TABLE IF NOT EXISTS master_password (pw TEXT);
+DELETE FROM master_password;
+INSERT INTO master_password (pw) VALUES ("$MASTER_PASS");
+EOF
 
 # --- Create systemd service ---
 SERVICE_FILE=/etc/systemd/system/refconbot.service
