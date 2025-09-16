@@ -16,6 +16,14 @@ class CommandHandler:
     def __init__(self, bot):
         self.bot = bot
 
+    # -------- helpers --------
+    def _find_online_by_name(self, name_lower):
+        """Return (eid, rec) for the exact-name (case-insensitive) match, else (None, None)."""
+        for teid, rec in self.bot.online.items():
+            if rec.get("name", "").lower() == name_lower:
+                return teid, rec
+        return None, None
+
     def dispatch(self, msg: str, eid: int, name: str):
         """Handle a parsed chat command from a player."""
         eos = self.bot.online.get(eid, {}).get("eos", str(eid))
@@ -188,7 +196,7 @@ class CommandHandler:
             if len(p) < 3:
                 return
             target_name, amt = p[1], int(p[2])
-            target = next((v for v in self.bot.online.values() if v["name"].lower() == target_name.lower()), None)
+            teid, target = self._find_online_by_name(target_name.lower())
             if not target:
                 return self.bot.pm(eid, f"{COL_ERR}Target not online.{COL_END}")
             tdata = get_player(self.bot.conn, target["eos"], self.bot.server_id)
@@ -202,7 +210,7 @@ class CommandHandler:
             if len(p) < 3:
                 return
             target_name, amt = p[1], int(p[2])
-            target = next((v for v in self.bot.online.values() if v["name"].lower() == target_name.lower()), None)
+            teid, target = self._find_online_by_name(target_name.lower())
             if not target:
                 return self.bot.pm(eid, f"{COL_ERR}Target not online.{COL_END}")
             tdata = get_player(self.bot.conn, target["eos"], self.bot.server_id)
@@ -217,7 +225,7 @@ class CommandHandler:
             if len(p) < 3:
                 return
             target_name, amt = p[1], int(p[2])
-            target = next((v for v in self.bot.online.values() if v["name"].lower() == target_name.lower()), None)
+            teid, target = self._find_online_by_name(target_name.lower())
             if not target:
                 return self.bot.pm(eid, f"{COL_ERR}Target not online.{COL_END}")
             tdata = get_player(self.bot.conn, target["eos"], self.bot.server_id)
@@ -231,7 +239,7 @@ class CommandHandler:
             if len(p) < 3:
                 return
             target_name, amt = p[1], int(p[2])
-            target = next((v for v in self.bot.online.values() if v["name"].lower() == target_name.lower()), None)
+            teid, target = self._find_online_by_name(target_name.lower())
             if not target:
                 return self.bot.pm(eid, f"{COL_ERR}Target not online.{COL_END}")
             tdata = get_player(self.bot.conn, target["eos"], self.bot.server_id)
@@ -248,22 +256,22 @@ class CommandHandler:
             target_name, tier = p[1], p[2].lower()
             if tier not in DONOR_TIERS:
                 return self.bot.pm(eid, f"{COL_ERR}Invalid donor tier. Available: {', '.join(DONOR_TIERS.keys())}{COL_END}")
-            target = next((v for v in self.bot.online.values() if v["name"].lower() == target_name.lower()), None)
+            teid, target = self._find_online_by_name(target_name.lower())
             if not target:
                 return self.bot.pm(eid, f"{COL_ERR}Target not online.{COL_END}")
 
             tdata = get_player(self.bot.conn, target["eos"], self.bot.server_id)
             tierinfo = DONOR_TIERS[tier]
-
             new_coins = tdata["coins"] + tierinfo.get("coins", 0)
             new_gold = tdata["gold"] + tierinfo.get("gold", 0)
             update_balance(self.bot.conn, target["eos"], self.bot.server_id, coins=new_coins, gold=new_gold)
             update_field(self.bot.conn, target["eos"], self.bot.server_id, "multiplier", tierinfo.get("multiplier", 1.0))
             update_field(self.bot.conn, target["eos"], self.bot.server_id, "donor", tier)
 
-            self.bot.pm(target["eid"], f"{COL_OK}You have been granted Donor Tier {tier.upper()}!{COL_END}")
-            self.bot.pm(target["eid"], f"{COL_GOLD}+{tierinfo.get('coins',0)} coins, +{tierinfo.get('gold',0)} gold, Multiplier set to x{tierinfo.get('multiplier',1.0)}{COL_END}")
-            self.bot.pm(target["eid"], f"{COL_INFO}Use /donor to claim your donor pack.{COL_END}")
+            # Notify player + admin
+            self.bot.pm(teid, f"{COL_OK}You have been granted Donor Tier {tier.upper()}!{COL_END}")
+            self.bot.pm(teid, f"{COL_GOLD}+{tierinfo.get('coins',0)} coins, +{tierinfo.get('gold',0)} gold, Multiplier set to x{tierinfo.get('multiplier',1.0)}{COL_END}")
+            self.bot.pm(teid, f"{COL_INFO}Use /donor to claim your donor pack.{COL_END}")
             self.bot.pm(eid, f"{COL_OK}{target_name} is now a Donor {tier.upper()}.{COL_END}")
 
         elif msg.startswith("/removedonor"):
@@ -273,12 +281,12 @@ class CommandHandler:
             if len(p) < 2:
                 return self.bot.pm(eid, f"{COL_INFO}Usage: /removedonor <playername>{COL_END}")
             target_name = p[1]
-            target = next((v for v in self.bot.online.values() if v["name"].lower() == target_name.lower()), None)
+            teid, target = self._find_online_by_name(target_name.lower())
             if not target:
                 return self.bot.pm(eid, f"{COL_ERR}Target not online.{COL_END}")
             update_field(self.bot.conn, target["eos"], self.bot.server_id, "donor", "None")
             update_field(self.bot.conn, target["eos"], self.bot.server_id, "multiplier", 1.0)
-            self.bot.pm(target["eid"], f"{COL_WARN}Your donor status has been revoked.{COL_END}")
+            self.bot.pm(teid, f"{COL_WARN}Your donor status has been revoked.{COL_END}")
             self.bot.pm(eid, f"{COL_OK}{target_name}'s donor status removed.{COL_END}")
 
         elif msg.startswith("/checkplayer"):
@@ -288,17 +296,17 @@ class CommandHandler:
             if len(p) < 2:
                 return self.bot.pm(eid, f"{COL_INFO}Usage: /checkplayer <playername>{COL_END}")
             target_name = p[1].lower()
-            target = next((v for v in self.bot.online.values() if v["name"].lower() == target_name), None)
+            teid, target = self._find_online_by_name(target_name)
             if not target:
                 return self.bot.pm(eid, f"{COL_ERR}Target not online.{COL_END}")
-            pdata = get_player(self.bot.conn, target["eos"], self.bot.server_id)
-            donor = pdata.get("donor", "None")
-            mult = pdata.get("multiplier", 1.0)
-            coins = pdata.get("coins", 0)
-            gold = pdata.get("gold", 0)
-            streak = pdata.get("streak", 0)
-            last_daily = pdata.get("last_daily", 0)
-            last_gimme = pdata.get("last_gimme", 0)
+            pp = get_player(self.bot.conn, target["eos"], self.bot.server_id)
+            donor = pp.get("donor", "None")
+            mult = pp.get("multiplier", 1.0)
+            coins = pp.get("coins", 0)
+            gold = pp.get("gold", 0)
+            streak = pp.get("streak", 0)
+            last_daily = pp.get("last_daily", 0)
+            last_gimme = pp.get("last_gimme", 0)
             self.bot.pm(eid, f"{COL_INFO}--- Player Info: {target_name} ---{COL_END}")
             self.bot.pm(eid, f"Coins: {coins}, Gold: {gold}, Mult: x{mult}, Donor: {donor}")
             self.bot.pm(eid, f"Streak: {streak}, Last Daily: {last_daily}, Last Gimme: {last_gimme}")
@@ -306,19 +314,40 @@ class CommandHandler:
         elif msg.startswith("/clearpackuse"):
             if not is_admin(self.bot.conn, eos):
                 return self.bot.pm(eid, f"{COL_ERR}Not admin.{COL_END}")
-            p = msg.split()
-            if len(p) < 2:
-                return self.bot.pm(eid, f"{COL_INFO}Usage: /clearpackuse <playername>{COL_END}")
-            target_name = p[1]
-            target = next((v for v in self.bot.online.values() if v["name"].lower() == target_name.lower()), None)
+
+            # Accept either order: /clearpackuse <player> [starterkit|donor|both]
+            # or:                    /clearpackuse [starterkit|donor|both] <player>
+            toks = msg.split()
+            if len(toks) < 2:
+                return self.bot.pm(eid, f"{COL_INFO}Usage: /clearpackuse <playername> [starterkit|donor|both]{COL_END}")
+
+            args = [a.lower() for a in toks[1:]]
+            mode = "both"
+            # find mode
+            for m in ("starterkit", "donor", "both"):
+                if m in args:
+                    mode = m
+                    args.remove(m)
+                    break
+            if not args:
+                return self.bot.pm(eid, f"{COL_INFO}Usage: /clearpackuse <playername> [starterkit|donor|both]{COL_END}")
+            target_name = args[0]
+
+            teid, target = self._find_online_by_name(target_name.lower())
             if not target:
                 return self.bot.pm(eid, f"{COL_ERR}Target not online.{COL_END}")
-            update_field(self.bot.conn, target["eos"], self.bot.server_id, "starter_used", 0)
-            update_field(self.bot.conn, target["eos"], self.bot.server_id, "donor", "None")
-            self.bot.pm(eid, f"{COL_OK}Cleared pack usage for {target_name}.{COL_END}")
+
+            if mode in ("starterkit", "both"):
+                update_field(self.bot.conn, target["eos"], self.bot.server_id, "starter_used", 0)
+            if mode in ("donor", "both"):
+                update_field(self.bot.conn, target["eos"], self.bot.server_id, "donor", "None")
+                update_field(self.bot.conn, target["eos"], self.bot.server_id, "multiplier", 1.0)
+
+            self.bot.pm(eid, f"{COL_OK}Cleared pack usage for {target_name} ({mode}).{COL_END}")
 
         elif msg.startswith("/addadmin"):
             p = shlex.split(msg)
+            # bootstrap via master password
             if len(p) == 2:
                 password = p[1]
                 master_pw = get_master_password(self.bot.conn)
@@ -336,7 +365,7 @@ class CommandHandler:
             if len(p) < 2:
                 return self.bot.pm(eid, f"{COL_INFO}Usage: /addadmins <playername>{COL_END}")
             target_name = p[1]
-            target = next((v for v in self.bot.online.values() if v["name"].lower() == target_name.lower()), None)
+            teid, target = self._find_online_by_name(target_name.lower())
             if not target:
                 return self.bot.pm(eid, f"{COL_ERR}Target not online.{COL_END}")
             add_admin(self.bot.conn, target["eos"])
