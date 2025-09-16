@@ -51,6 +51,18 @@ class TelnetBot:
 
     def _safe_dispatch(self, line):
         try:
+            # --- Player position update from listplayers output ---
+            m = re.search(r"id=(\d+).*name=([^,]+).*pos=\(([-\d]+), ([-\d]+), ([-\d]+)\)", line)
+            if m:
+                eid = int(m[1])
+                name = m[2].strip()
+                x, y, z = int(m[3]), int(m[4]), int(m[5])
+                self.online[eid] = self.online.get(eid, {})
+                self.online[eid].update({
+                    "name": name,
+                    "pos": (x, y, z),
+                })
+
             self.commands.dispatch(line)
         except Exception:
             print(traceback.format_exc())
