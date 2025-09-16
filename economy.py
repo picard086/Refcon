@@ -137,12 +137,24 @@ bot_instances = []  # keep track of all bots
 async def run_command(request: Request):
     data = await request.json()
     cmd = data.get("cmd")
+    target_server = data.get("server_id")  # optional, to target one server
+
     if not cmd:
         return {"status": "error", "msg": "No command provided"}
-    # send command to all connected bots
-    for bot in bot_instances:
-        bot.send(cmd)
-    return {"status": "ok", "cmd": cmd}
+
+    # Select bots (all, or one if server_id given)
+    bots = bot_instances
+    if target_server:
+        bots = [b for b in bot_instances if str(b.server_id) == str(target_server)]
+
+    for bot in bots:
+        try:
+            # Dispatch command as if run by an admin
+            bot.cmd_handler.dispatch(cmd, 0, "WebAdmin")
+        except Exception as e:
+            return {"status": "error", "msg": str(e)}
+
+    return {"status": "ok", "cmd": cmd, "servers": [b.server_id for b in bots]}
 
 def start_bot_api():
     uvicorn.run(bot_api, host="127.0.0.1", port=8899, log_level="info")
