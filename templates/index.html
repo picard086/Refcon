@@ -19,7 +19,8 @@
   {% endif %}
 
   <div class="row g-4">
-    <!-- Economy: Add Donor -->
+
+    <!-- Add Donor -->
     <div class="col-md-6">
       <div class="card bg-secondary shadow">
         <div class="card-header">Add Donor</div>
@@ -38,7 +39,7 @@
       </div>
     </div>
 
-    <!-- Economy: Add Gold -->
+    <!-- Add Gold -->
     <div class="col-md-6">
       <div class="card bg-secondary shadow">
         <div class="card-header">Add Gold</div>
@@ -53,7 +54,7 @@
       </div>
     </div>
 
-    <!-- Player: Check -->
+    <!-- Check Player -->
     <div class="col-md-6">
       <div class="card bg-secondary shadow">
         <div class="card-header">Check Player</div>
@@ -67,7 +68,7 @@
       </div>
     </div>
 
-    <!-- Player: PM -->
+    <!-- Send PM -->
     <div class="col-md-6">
       <div class="card bg-secondary shadow">
         <div class="card-header">Send PM</div>
@@ -87,18 +88,15 @@
       <div class="card bg-secondary shadow">
         <div class="card-header">Rewards</div>
         <div class="card-body">
-          <form method="post" action="/run_command">
-            <input type="hidden" name="cmd" value="/gimme">
+          <form method="post" action="/web_gimme">
             <input type="number" name="server_id" class="form-control mb-2" placeholder="Server ID">
             <button type="submit" class="btn btn-outline-light w-100">Trigger Gimme</button>
           </form>
-          <form method="post" action="/run_command" class="mt-2">
-            <input type="hidden" name="cmd" value="/daily">
+          <form method="post" action="/web_daily" class="mt-2">
             <input type="number" name="server_id" class="form-control mb-2" placeholder="Server ID">
             <button type="submit" class="btn btn-outline-light w-100">Trigger Daily</button>
           </form>
-          <form method="post" action="/run_command" class="mt-2">
-            <input type="hidden" name="cmd" value="/vote">
+          <form method="post" action="/web_vote" class="mt-2">
             <input type="number" name="server_id" class="form-control mb-2" placeholder="Server ID">
             <button type="submit" class="btn btn-outline-light w-100">Save Vote</button>
           </form>
@@ -111,18 +109,19 @@
       <div class="card bg-secondary shadow">
         <div class="card-header">Teleports</div>
         <div class="card-body">
-          <form method="post" action="/run_command">
-            <input type="text" name="cmd" class="form-control mb-2" placeholder="/settp home">
+          <form method="post" action="/web_settp">
+            <input type="text" name="player" class="form-control mb-2" placeholder="Player">
+            <input type="text" name="tpname" class="form-control mb-2" placeholder="TP name">
             <input type="number" name="server_id" class="form-control mb-2" placeholder="Server ID">
             <button type="submit" class="btn btn-outline-warning w-100">Set TP</button>
           </form>
-          <form method="post" action="/run_command" class="mt-2">
-            <input type="hidden" name="cmd" value="/tplist">
+          <form method="post" action="/web_tplist" class="mt-2">
+            <input type="text" name="player" class="form-control mb-2" placeholder="Player">
             <input type="number" name="server_id" class="form-control mb-2" placeholder="Server ID">
             <button type="submit" class="btn btn-outline-warning w-100">List TPs</button>
           </form>
-          <form method="post" action="/run_command" class="mt-2">
-            <input type="text" name="cmd" class="form-control mb-2" placeholder="/deltp home">
+          <form method="post" action="/web_deltp" class="mt-2">
+            <input type="text" name="tpname" class="form-control mb-2" placeholder="TP name">
             <input type="number" name="server_id" class="form-control mb-2" placeholder="Server ID">
             <button type="submit" class="btn btn-outline-warning w-100">Delete TP</button>
           </form>
@@ -135,15 +134,23 @@
       <div class="card bg-secondary shadow">
         <div class="card-header">Shops</div>
         <div class="card-body">
-          <form method="post" action="/run_command">
-            <input type="hidden" name="cmd" value="/shop">
+          <form method="post" action="/web_shop">
             <input type="number" name="server_id" class="form-control mb-2" placeholder="Server ID">
             <button type="submit" class="btn btn-outline-info w-100">Open Shop</button>
           </form>
-          <form method="post" action="/run_command" class="mt-2">
-            <input type="hidden" name="cmd" value="/goldshop">
+          <form method="post" action="/web_goldshop" class="mt-2">
             <input type="number" name="server_id" class="form-control mb-2" placeholder="Server ID">
             <button type="submit" class="btn btn-outline-info w-100">Open Gold Shop</button>
+          </form>
+          <form method="post" action="/web_buy" class="mt-2">
+            <input type="number" name="itemid" class="form-control mb-2" placeholder="Item ID">
+            <input type="number" name="server_id" class="form-control mb-2" placeholder="Server ID">
+            <button type="submit" class="btn btn-outline-info w-100">Buy Item</button>
+          </form>
+          <form method="post" action="/web_goldbuy" class="mt-2">
+            <input type="number" name="itemid" class="form-control mb-2" placeholder="Item ID">
+            <input type="number" name="server_id" class="form-control mb-2" placeholder="Server ID">
+            <button type="submit" class="btn btn-outline-info w-100">Buy with Gold</button>
           </form>
         </div>
       </div>
@@ -154,15 +161,24 @@
       <div class="card bg-secondary shadow">
         <div class="card-header">Utility</div>
         <div class="card-body">
-          <form method="post" action="/run_command">
-            <input type="text" name="cmd" class="form-control mb-2" placeholder="/say Hello world!">
+          <form method="post" action="/web_say">
+            <input type="text" name="message" class="form-control mb-2" placeholder="Message">
             <input type="number" name="server_id" class="form-control mb-2" placeholder="Server ID">
             <button type="submit" class="btn btn-outline-danger w-100">Broadcast</button>
           </form>
-          <form method="post" action="/run_command" class="mt-2">
-            <input type="hidden" name="cmd" value="/soil">
+          <form method="post" action="/web_soil" class="mt-2">
             <input type="number" name="server_id" class="form-control mb-2" placeholder="Server ID">
-            <button type="submit" class="btn btn-outline-danger w-100">Soil Command</button>
+            <button type="submit" class="btn btn-outline-danger w-100">Soil</button>
+          </form>
+          <form method="post" action="/web_kick" class="mt-2">
+            <input type="text" name="player" class="form-control mb-2" placeholder="Player">
+            <input type="number" name="server_id" class="form-control mb-2" placeholder="Server ID">
+            <button type="submit" class="btn btn-outline-danger w-100">Kick</button>
+          </form>
+          <form method="post" action="/web_ban" class="mt-2">
+            <input type="text" name="player" class="form-control mb-2" placeholder="Player">
+            <input type="number" name="server_id" class="form-control mb-2" placeholder="Server ID">
+            <button type="submit" class="btn btn-outline-danger w-100">Ban</button>
           </form>
         </div>
       </div>
@@ -188,7 +204,7 @@
       <div class="card bg-secondary shadow">
         <div class="card-header">Online Players</div>
         <div class="card-body">
-          <table class="table table-dark table-striped">
+          <table class="table table-dark table-striped" id="playersTable">
             <thead>
               <tr>
                 <th>EID</th>
@@ -197,16 +213,7 @@
                 <th>Position</th>
               </tr>
             </thead>
-            <tbody>
-              {% for eid, pdata in bots[0].online.items() %}
-              <tr>
-                <td>{{ eid }}</td>
-                <td>{{ pdata.name }}</td>
-                <td>{{ pdata.eos }}</td>
-                <td>{{ pdata.pos if pdata.pos else "?" }}</td>
-              </tr>
-              {% endfor %}
-            </tbody>
+            <tbody></tbody>
           </table>
         </div>
       </div>
@@ -216,6 +223,7 @@
 </div>
 
 <script>
+// Raw command form
 document.getElementById("rawForm").addEventListener("submit", async (e) => {
   e.preventDefault();
   const cmd = document.getElementById("cmd").value;
@@ -228,8 +236,29 @@ document.getElementById("rawForm").addEventListener("submit", async (e) => {
   const data = await res.json();
   document.getElementById("result").textContent = JSON.stringify(data, null, 2);
 });
+
+// Auto-refresh online players
+async function loadPlayers() {
+  const res = await fetch("/online_players");
+  const data = await res.json();
+  const tbody = document.querySelector("#playersTable tbody");
+  tbody.innerHTML = "";
+  for (const [serverId, players] of Object.entries(data)) {
+    players.forEach(p => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${p.eid}</td>
+        <td>${p.name}</td>
+        <td>${p.eos}</td>
+        <td>${p.pos || "?"}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+}
+setInterval(loadPlayers, 5000);
+loadPlayers();
 </script>
 
 </body>
 </html>
-
