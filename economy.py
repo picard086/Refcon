@@ -145,57 +145,57 @@ templates = Jinja2Templates(directory="templates")
 async def home(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
+# --- Specific function routes ---
 @bot_api.post("/web_adddonor")
-async def web_adddonor(
-    request: Request,
-    player: str = Form(...),
-    tier: str = Form(...),
-    server_id: int = Form(...)
-):
-    cmd = f"/adddonor {player} {tier}"
-    for bot in bot_instances:
-        if str(bot.server_id) == str(server_id):
-            # ensure WebAdmin is present as an online actor
-            bot.online[0] = {
-                "name": "WebAdmin",
-                "eos": "WebAdmin",
-                "steam": "WebAdmin"
-            }
-            bot.cmd_handler.dispatch(cmd, 0, "WebAdmin", "WebAdmin")
-            return templates.TemplateResponse("index.html", {
-                "request": request,
-                "msg": f"{player} is now donor {tier.upper()} on server {server_id}"
-            })
-    return templates.TemplateResponse("index.html", {
-        "request": request,
-        "msg": "Server not found"
-    })
+async def web_adddonor(request: Request, player: str = Form(...), tier: str = Form(...), server_id: int = Form(...)):
+    return await _dispatch_command(request, f"/adddonor {player} {tier}", server_id, f"{player} is now donor {tier.upper()}")
 
+@bot_api.post("/web_addgold")
+async def web_addgold(request: Request, player: str = Form(...), amount: int = Form(...), server_id: int = Form(...)):
+    return await _dispatch_command(request, f"/addgold {player} {amount}", server_id, f"Added {amount} gold to {player}")
 
+@bot_api.post("/web_checkplayer")
+async def web_checkplayer(request: Request, player: str = Form(...), server_id: int = Form(...)):
+    return await _dispatch_command(request, f"/checkplayer {player}", server_id, f"Checked {player}'s info")
+
+@bot_api.post("/web_pm")
+async def web_pm(request: Request, player: str = Form(...), message: str = Form(...), server_id: int = Form(...)):
+    return await _dispatch_command(request, f"/pm {player} {message}", server_id, f"Sent PM to {player}")
+
+# --- Generic JSON command endpoint ---
 @bot_api.post("/run_command")
 async def run_command(request: Request):
     data = await request.json()
     cmd = data.get("cmd")
-    target_server = data.get("server_id")  # optional, to target one server
+    target_server = data.get("server_id")
 
     if not cmd:
         return {"status": "error", "msg": "No command provided"}
 
-    # Select bots (all, or one if server_id given)
+    return _dispatch_json(cmd, target_server)
+
+
+# --- Shared dispatcher helpers ---
+async def _dispatch_command(request: Request, cmd: str, server_id: int, success_msg: str):
+    bots = [b for b in bot_instances if str(b.server_id) == str(server_id)]
+    for bot in bots:
+        try:
+            bot.online[0] = {"name": "WebAdmin", "eos": "WebAdmin", "steam": "WebAdmin"}
+            bot.cmd_handler.dispatch(cmd, 0, "WebAdmin", "WebAdmin")
+            return templates.TemplateResponse("index.html", {"request": request, "msg": success_msg})
+        except Exception as e:
+            return templates.TemplateResponse("index.html", {"request": request, "msg": str(e)})
+    return templates.TemplateResponse("index.html", {"request": request, "msg": "Server not found"})
+
+
+def _dispatch_json(cmd: str, target_server: int = None):
     bots = bot_instances
     if target_server:
         bots = [b for b in bot_instances if str(b.server_id) == str(target_server)]
 
     for bot in bots:
         try:
-            # fully populate WebAdmin record
-            bot.online[0] = {
-                "name": "WebAdmin",
-                "eos": "WebAdmin",
-                "steam": "WebAdmin"
-            }
-
-            # pass eos explicitly
+            bot.online[0] = {"name": "WebAdmin", "eos": "WebAdmin", "steam": "WebAdmin"}
             bot.cmd_handler.dispatch(cmd, 0, "WebAdmin", "WebAdmin")
         except Exception as e:
             return {"status": "error", "msg": str(e)}
@@ -226,7 +226,7 @@ def main():
         bot = EconomyBot(row["id"], row["name"], row["ip"], row["port"], row["password"], conn)
         if bot.connect():
             print(f"[econ] Launching thread for server {row['id']} ({row['name']})")
-            bot_instances.append(bot)  # keep bot for API bridge
+            bot_instances.append(bot)
             t = threading.Thread(target=run_bot, args=(bot,), daemon=True)
             threads.append(t)
             t.start()
