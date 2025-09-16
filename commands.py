@@ -371,6 +371,7 @@ class CommandHandler:
             add_admin(self.bot.conn, target["eos"])
             self.bot.pm(eid, f"{COL_OK}{target_name} is now admin.{COL_END}")
 
+        
         # ---------------- Vote ----------------
         elif msg == "/vote":
             api_key = "HgpNQra3gAUGmzYL6SDCV30YNuFUSzGniRy"
@@ -388,3 +389,4 @@ class CommandHandler:
                     self.bot.pm(eid, f"{COL_WARN}No vote found yet.{COL_END}")
             except Exception:
                 self.bot.pm(eid, f"{COL_ERR}Vote check failed.{COL_END}")
+
