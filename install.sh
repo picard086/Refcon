@@ -60,12 +60,10 @@ VALUES ("$SERVER_NAME", "$SERVER_IP", $SERVER_PORT, "$SERVER_PASS");
 EOF
 done
 
-# --- Store master password in admins table ---
-# NOTE: You could hash this for security, but keeping plaintext for now.
+# --- Store master password in settings table ---
 sqlite3 economy.db <<EOF
-CREATE TABLE IF NOT EXISTS master_password (pw TEXT);
-DELETE FROM master_password;
-INSERT INTO master_password (pw) VALUES ("$MASTER_PASS");
+CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT);
+INSERT OR REPLACE INTO settings (key, value) VALUES ('master_password', "$MASTER_PASS");
 EOF
 
 # --- Create systemd service ---
