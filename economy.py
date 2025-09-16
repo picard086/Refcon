@@ -116,9 +116,6 @@ class EconomyBot:
 def run_bot(bot: EconomyBot):
     """Run one bot in its own thread."""
     bot.admins = load_admins()
-    # Make sure WebAdmin is always trusted
-    if "WebAdmin" not in bot.admins:
-        bot.admins.append("WebAdmin")
 
     scheduler = Scheduler(bot)
     scheduler.start()
