@@ -4,15 +4,17 @@ from db import get_conn, update_balance
 
 
 class Scheduler:
-    def __init__(self, bot, interval=60):
+    def __init__(self, bot, income_interval=60, lp_interval=30):
         self.bot = bot
-        self.interval = interval
+        self.income_interval = income_interval
+        self.lp_interval = lp_interval
         self.running = False
-        self.thread = None
+        self.income_thread = None
+        self.lp_thread = None
 
     def _income_loop(self):
         while self.running:
-            time.sleep(self.interval)
+            time.sleep(self.income_interval)
             conn = get_conn()
             cur = conn.execute(
                 "SELECT eos, coins, multiplier FROM players WHERE server_id=?",
@@ -22,22 +24,34 @@ class Scheduler:
                 new_coins = row["coins"] + int(1 * row["multiplier"])
                 update_balance(conn, row["eos"], self.bot.server_id, coins=new_coins)
 
+    def _lp_loop(self):
+        while self.running:
+            try:
+                self.bot.send("lp")
+            except Exception as e:
+                print(f"[econ] lp error: {e}")
+            time.sleep(self.lp_interval)
+
     def start(self):
-        """Start the income loop in a background thread."""
+        """Start both loops in background threads."""
         if not self.running:
             self.running = True
-            self.thread = threading.Thread(target=self._income_loop, daemon=True)
-            self.thread.start()
+            self.income_thread = threading.Thread(target=self._income_loop, daemon=True)
+            self.lp_thread = threading.Thread(target=self._lp_loop, daemon=True)
+            self.income_thread.start()
+            self.lp_thread.start()
 
     def stop(self):
-        """Stop the scheduler loop."""
+        """Stop both loops."""
         self.running = False
-        if self.thread:
-            self.thread.join(timeout=2)
-            self.thread = None
+        if self.income_thread:
+            self.income_thread.join(timeout=2)
+            self.income_thread = None
+        if self.lp_thread:
+            self.lp_thread.join(timeout=2)
+            self.lp_thread = None
 
     def run_pending(self):
         """Compatibility: just ensure scheduler is started."""
         if not self.running:
             self.start()
-
