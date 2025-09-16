@@ -99,8 +99,11 @@ class CommandHandler:
             donor = pdata.get("donor", None)
             if not donor or donor not in DONOR_TIERS:
                 return self.bot.pm(eid, f"{COL_WARN}No donor tier found.{COL_END}")
+            if pdata.get("donor_used", 0):
+                return self.bot.pm(eid, f"{COL_WARN}Already claimed donor pack.{COL_END}")
             for i in DONOR_PACK:
                 self.bot.send(f"giveplus {eid} {i['name']} {i['amount']}")
+            update_field(self.bot.conn, eos, self.bot.server_id, "donor_used", 1)
             self.bot.pm(eid, f"{COL_OK}Donor pack delivered! Tier: {donor}{COL_END}")
 
         elif msg == "/gimme":
@@ -267,6 +270,7 @@ class CommandHandler:
             update_balance(self.bot.conn, target["eos"], self.bot.server_id, coins=new_coins, gold=new_gold)
             update_field(self.bot.conn, target["eos"], self.bot.server_id, "multiplier", tierinfo.get("multiplier", 1.0))
             update_field(self.bot.conn, target["eos"], self.bot.server_id, "donor", tier)
+            update_field(self.bot.conn, target["eos"], self.bot.server_id, "donor_used", 0)
 
             # Notify player + admin
             self.bot.pm(teid, f"{COL_OK}You have been granted Donor Tier {tier.upper()}!{COL_END}")
@@ -286,6 +290,7 @@ class CommandHandler:
                 return self.bot.pm(eid, f"{COL_ERR}Target not online.{COL_END}")
             update_field(self.bot.conn, target["eos"], self.bot.server_id, "donor", "None")
             update_field(self.bot.conn, target["eos"], self.bot.server_id, "multiplier", 1.0)
+            update_field(self.bot.conn, target["eos"], self.bot.server_id, "donor_used", 0)
             self.bot.pm(teid, f"{COL_WARN}Your donor status has been revoked.{COL_END}")
             self.bot.pm(eid, f"{COL_OK}{target_name}'s donor status removed.{COL_END}")
 
@@ -307,8 +312,9 @@ class CommandHandler:
             streak = pp.get("streak", 0)
             last_daily = pp.get("last_daily", 0)
             last_gimme = pp.get("last_gimme", 0)
+            donor_used = pp.get("donor_used", 0)
             self.bot.pm(eid, f"{COL_INFO}--- Player Info: {target_name} ---{COL_END}")
-            self.bot.pm(eid, f"Coins: {coins}, Gold: {gold}, Mult: x{mult}, Donor: {donor}")
+            self.bot.pm(eid, f"Coins: {coins}, Gold: {gold}, Mult: x{mult}, Donor: {donor}, DonorUsed: {donor_used}")
             self.bot.pm(eid, f"Streak: {streak}, Last Daily: {last_daily}, Last Gimme: {last_gimme}")
 
         elif msg.startswith("/clearpackuse"):
@@ -342,6 +348,7 @@ class CommandHandler:
             if mode in ("donor", "both"):
                 update_field(self.bot.conn, target["eos"], self.bot.server_id, "donor", "None")
                 update_field(self.bot.conn, target["eos"], self.bot.server_id, "multiplier", 1.0)
+                update_field(self.bot.conn, target["eos"], self.bot.server_id, "donor_used", 0)
 
             self.bot.pm(eid, f"{COL_OK}Cleared pack usage for {target_name} ({mode}).{COL_END}")
 
@@ -389,4 +396,3 @@ class CommandHandler:
                     self.bot.pm(eid, f"{COL_WARN}No vote found yet.{COL_END}")
             except Exception:
                 self.bot.pm(eid, f"{COL_ERR}Vote check failed.{COL_END}")
-
