@@ -1,4 +1,4 @@
-import shlex, time, requests
+import shlex, time, requests, threading
 from db import (
     get_player, update_balance, update_field,
     add_teleport, get_teleports, del_teleport,
@@ -104,9 +104,14 @@ class CommandHandler:
             p = shlex.split(msg)
             if len(p) < 2:
                 return self.bot.pm(eid, f"{COL_INFO}Usage: /settp <name>{COL_END}")
-            pos = self.bot.online.get(eid, {}).get("pos", (0, 0, 0))
-            add_teleport(self.bot.conn, pdata["id"], p[1], pos)
-            self.bot.pm(eid, f"{COL_OK}Teleport '{p[1]}' saved at {pos}.{COL_END}")
+
+            tpname = p[1].lower()
+            pos = self.bot.online.get(eid, {}).get("pos")
+            if not pos:
+                return self.bot.pm(eid, f"{COL_ERR}Unable to determine your position right now.{COL_END}")
+
+            add_teleport(self.bot.conn, pdata["id"], tpname, pos)
+            self.bot.pm(eid, f"{COL_OK}Teleport '{tpname}' saved at {pos}.{COL_END}")
 
         elif msg == "/tplist":
             tps = get_teleports(self.bot.conn, pdata["id"])
@@ -119,22 +124,28 @@ class CommandHandler:
             p = shlex.split(msg)
             if len(p) < 2:
                 return self.bot.pm(eid, f"{COL_INFO}Usage: /deltp <name>{COL_END}")
-            del_teleport(self.bot.conn, pdata["id"], p[1])
+            del_teleport(self.bot.conn, pdata["id"], p[1].lower())
             self.bot.pm(eid, f"{COL_OK}Teleport '{p[1]}' deleted.{COL_END}")
 
         elif msg.startswith("/tp"):
             p = shlex.split(msg)
             if len(p) < 2:
                 return self.bot.pm(eid, f"{COL_INFO}Usage: /tp <name>{COL_END}")
+            tpname = p[1].lower()
             tps = get_teleports(self.bot.conn, pdata["id"])
-            tp = next((t for t in tps if t["name"].lower() == p[1].lower()), None)
+            tp = next((t for t in tps if t["name"].lower() == tpname), None)
             if not tp:
                 return self.bot.pm(eid, f"{COL_ERR}Teleport not found.{COL_END}")
 
-            # Ensure coords are floats
-            x, y, z = float(tp["x"]), float(tp["y"]), float(tp["z"])
-            self.bot.send(f"teleportplayer {eid} {x} {y} {z}")
-            self.bot.pm(eid, f"{COL_OK}Teleported to {tp['name']} at ({x}, {y}, {z})!{COL_END}")
+            def delayed():
+                time.sleep(5)
+                x, y, z = int(float(tp["x"])), int(float(tp["y"])), int(float(tp["z"]))
+                self.bot.send(f"teleportplayer {eid} {x} {y} {z}")
+                self.bot.pm(eid, f"{COL_GOLD}Teleported to '{tpname}' at ({x}, {y}, {z}).{COL_END}")
+                self.bot.send(f"getdrone {eid}")
+
+            self.bot.pm(eid, f"{COL_INFO}Teleporting to '{tpname}' in 5 seconds...{COL_END}")
+            threading.Thread(target=delayed, daemon=True).start()
 
         # ---------------- Admin ----------------
         elif msg.startswith("/addcoins"):
