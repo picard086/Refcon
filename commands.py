@@ -2,7 +2,8 @@ import shlex, time, requests, threading, random
 from db import (
     get_player, update_balance, update_field,
     add_teleport, get_teleports, del_teleport,
-    is_admin, add_admin, save_vote
+    is_admin, add_admin, save_vote,
+    get_master_password
 )
 from utils import COL_OK, COL_WARN, COL_ERR, COL_INFO, COL_GOLD, COL_END
 from constants import (
@@ -14,12 +15,6 @@ from constants import (
 class CommandHandler:
     def __init__(self, bot):
         self.bot = bot
-
-    def _get_master_password(self):
-        """Fetch master password from DB (settings table)."""
-        cur = self.bot.conn.execute("SELECT value FROM settings WHERE key='master_password'")
-        row = cur.fetchone()
-        return row["value"] if row else None
 
     def dispatch(self, msg: str, eid: int, name: str):
         """Handle a parsed chat command from a player."""
@@ -206,7 +201,7 @@ class CommandHandler:
             # Case 1: Master password bootstrap
             if len(p) == 2:
                 password = p[1]
-                master_pw = self._get_master_password()
+                master_pw = get_master_password(self.bot.conn)
                 if master_pw and password == master_pw:
                     add_admin(self.bot.conn, eos)
                     return self.bot.pm(eid, f"{COL_OK}{name} promoted to Admin using master password!{COL_END}")
