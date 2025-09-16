@@ -116,6 +116,8 @@ class EconomyBot:
 def run_bot(bot: EconomyBot):
     """Run one bot in its own thread."""
     bot.admins = load_admins()
+    if "WebAdmin" not in bot.admins:
+        bot.admins.append("WebAdmin")
 
     scheduler = Scheduler(bot)
     scheduler.start()
@@ -148,17 +150,17 @@ async def run_command(request: Request):
     if target_server:
         bots = [b for b in bot_instances if str(b.server_id) == str(target_server)]
 
-for bot in bots:
-    try:
-        # make sure WebAdmin exists in online list
-        bot.online[0] = {"name": "WebAdmin", "eos": "WebAdmin"}
+    for bot in bots:
+        try:
+            # make sure WebAdmin exists in online list
+            bot.online[0] = {"name": "WebAdmin", "eos": "WebAdmin"}
 
-        # pass eos explicitly
-        bot.cmd_handler.dispatch(cmd, 0, "WebAdmin", "WebAdmin")
-    except Exception as e:
-        return {"status": "error", "msg": str(e)}
+            # pass eos explicitly
+            bot.cmd_handler.dispatch(cmd, 0, "WebAdmin", "WebAdmin")
+        except Exception as e:
+            return {"status": "error", "msg": str(e)}
 
-return {"status": "ok", "cmd": cmd, "servers": [b.server_id for b in bots]}
+    return {"status": "ok", "cmd": cmd, "servers": [b.server_id for b in bots]}
 
 
 def start_bot_api():
@@ -204,5 +206,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
