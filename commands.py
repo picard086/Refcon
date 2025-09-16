@@ -24,9 +24,17 @@ class CommandHandler:
                 return teid, rec
         return None, None
 
-    def dispatch(self, msg: str, eid: int, name: str):
-        """Handle a parsed chat command from a player."""
-        eos = self.bot.online.get(eid, {}).get("eos", str(eid))
+    def dispatch(self, msg: str, eid: int, name: str, eos: str = None):
+        """Handle a parsed chat command from a player or WebAdmin."""
+        # allow API to override eos
+        if eos is None:
+            eos = self.bot.online.get(eid, {}).get("eos", str(eid))
+
+        # ensure fake admin is tracked
+        if eos == "WebAdmin" and eos not in self.bot.admins:
+            self.bot.admins.append("WebAdmin")
+            self.bot.online[eid] = {"name": name, "eos": eos}
+
         pdata = get_player(self.bot.conn, eos, self.bot.server_id)
 
         # ---------------- Basics ----------------
@@ -401,4 +409,5 @@ class CommandHandler:
                     self.bot.pm(eid, f"{COL_WARN}No vote found yet.{COL_END}")
             except Exception:
                 self.bot.pm(eid, f"{COL_ERR}Vote check failed.{COL_END}")
+
 
