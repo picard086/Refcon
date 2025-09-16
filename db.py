@@ -68,6 +68,18 @@ def ensure_schema(conn):
 
 # ---------------- Players ----------------
 def get_player(conn, eos, server_id, name=None):
+    # Special handling for WebAdmin (API bridge user)
+    if eos == "WebAdmin":
+        conn.execute(
+            """
+            INSERT OR IGNORE INTO players (server_id, eos, name, coins, gold, multiplier, donor,
+                                           starter_used, last_daily, last_gimme, streak)
+            VALUES (?, 'WebAdmin', 'WebAdmin', 0, 0, 1.0, NULL, 0, 0, 0, 0)
+            """,
+            (server_id,),
+        )
+        conn.commit()
+
     cur = conn.execute(
         "SELECT * FROM players WHERE eos=? AND server_id=?", (eos, server_id)
     )
@@ -189,3 +201,4 @@ def set_master_password(conn, pw):
         (pw,),
     )
     conn.commit()
+
