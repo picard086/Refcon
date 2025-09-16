@@ -358,7 +358,7 @@ class CommandHandler:
                     return self.bot.pm(eid, f"{COL_ERR}Invalid master password.{COL_END}")
             return self.bot.pm(eid, f"{COL_INFO}Usage: /addadmin <masterpassword>{COL_END}")
 
-        elif msg.startswith("/addadmins"):
+        elif msg.startswith("/adminadd"):
             if not is_admin(self.bot.conn, eos):
                 return self.bot.pm(eid, f"{COL_ERR}Not admin.{COL_END}")
             p = shlex.split(msg)
@@ -388,3 +388,4 @@ class CommandHandler:
                     self.bot.pm(eid, f"{COL_WARN}No vote found yet.{COL_END}")
             except Exception:
                 self.bot.pm(eid, f"{COL_ERR}Vote check failed.{COL_END}")
+
