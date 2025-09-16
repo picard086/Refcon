@@ -1,4 +1,4 @@
-# Refcon Server Manager - NOT STABLE
+# Refcon Server Manager
 
 A custom **7 Days to Die Economy Bot** that connects to your server via **Telnet**, tracks players, manages coins & gold, provides in-game shops, kits, teleports, and integrates with voting sites.  
 
