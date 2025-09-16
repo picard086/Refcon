@@ -36,7 +36,7 @@ sudo apt install -y python3.12-venv
 python3.12 -m venv venv
 source venv/bin/activate
 pip install --upgrade pip
-pip install requests pytz
+pip install requests pytz fastapi uvicorn
 
 # --- Init database ---
 if [ ! -f economy.db ]; then
@@ -67,11 +67,17 @@ VALUES ("$SERVER_NAME", "$SERVER_IP", $SERVER_PORT, "$SERVER_PASS");
 EOF
 done
 
-# --- Store master password in admins table ---
+# --- Store master password in settings table ---
 sqlite3 economy.db <<EOF
-CREATE TABLE IF NOT EXISTS master_password (pw TEXT);
-DELETE FROM master_password;
-INSERT INTO master_password (pw) VALUES ("$MASTER_PASS");
+CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT);
+DELETE FROM settings WHERE key='master_password';
+INSERT INTO settings (key, value) VALUES ('master_password', "$MASTER_PASS");
+EOF
+
+# --- Always seed WebAdmin as permanent admin ---
+sqlite3 economy.db <<EOF
+CREATE TABLE IF NOT EXISTS admins (eos TEXT PRIMARY KEY);
+INSERT OR IGNORE INTO admins (eos) VALUES ("WebAdmin");
 EOF
 
 # --- Create systemd service ---
