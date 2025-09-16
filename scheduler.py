@@ -15,22 +15,29 @@ class Scheduler:
     def _income_loop(self):
         while self.running:
             time.sleep(self.income_interval)
-            conn = get_conn()
-            cur = conn.execute(
-                "SELECT eos, coins, multiplier FROM players WHERE server_id=?",
-                (self.bot.server_id,)
-            )
-            for row in cur.fetchall():
-                new_coins = row["coins"] + int(1 * row["multiplier"])
-                update_balance(conn, row["eos"], self.bot.server_id, coins=new_coins)
+            if not self.running:
+                break
+            try:
+                conn = self.bot.conn or get_conn()
+                cur = conn.execute(
+                    "SELECT eos, coins, multiplier FROM players WHERE server_id=?",
+                    (self.bot.server_id,),
+                )
+                for row in cur.fetchall():
+                    new_coins = row["coins"] + int(1 * row["multiplier"])
+                    update_balance(conn, row["eos"], self.bot.server_id, coins=new_coins)
+            except Exception as e:
+                print(f"[econ][Scheduler] income error: {e}")
 
     def _lp_loop(self):
         while self.running:
+            time.sleep(self.lp_interval)
+            if not self.running:
+                break
             try:
                 self.bot.send("lp")
             except Exception as e:
-                print(f"[econ] lp error: {e}")
-            time.sleep(self.lp_interval)
+                print(f"[econ][Scheduler] lp error: {e}")
 
     def start(self):
         """Start both loops in background threads."""
