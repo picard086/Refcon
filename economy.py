@@ -234,13 +234,15 @@ async def web_kick(request: Request, player: str = Form(...), server_id: int = F
 async def web_ban(request: Request, player: str = Form(...), server_id: int = Form(...)):
     return await _dispatch_command(request, f"/ban {player}", server_id, f"Banned {player}")
 
-# --- Online players as JSON ---
+# --- Online players as JSON (skip WebAdmin) ---
 @bot_api.get("/online_players")
 async def online_players():
     data = {}
     for bot in bot_instances:
         players = []
         for eid, pdata in bot.online.items():
+            if pdata.get("name") == "WebAdmin":
+                continue
             players.append({
                 "eid": eid,
                 "name": pdata.get("name"),
@@ -257,6 +259,7 @@ async def _dispatch_command(request: Request, cmd: str, server_id: int, success_
     bots = [b for b in bot_instances if str(b.server_id) == str(server_id)]
     for bot in bots:
         try:
+            # Always run as WebAdmin (authority), but don’t overwrite the player in cmd
             bot.online[0] = {"name": "WebAdmin", "eos": "WebAdmin", "steam": "WebAdmin"}
             bot.cmd_handler.dispatch(cmd, 0, "WebAdmin", "WebAdmin")
             return templates.TemplateResponse("index.html", {"request": request, "msg": success_msg})
@@ -278,6 +281,7 @@ def _dispatch_json(cmd: str, target_server: int = None):
             return {"status": "error", "msg": str(e)}
 
     return {"status": "ok", "cmd": cmd, "servers": [b.server_id for b in bots]}
+
 
 
 def start_bot_api():
@@ -323,4 +327,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
