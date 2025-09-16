@@ -80,6 +80,14 @@ CREATE TABLE IF NOT EXISTS admins (eos TEXT PRIMARY KEY);
 INSERT OR IGNORE INTO admins (eos) VALUES ("WebAdmin");
 EOF
 
+# --- Run schema check in Python to keep schema consistent ---
+source venv/bin/activate
+python3 - <<'PYCODE'
+from db import get_conn
+conn = get_conn()  # runs ensure_schema
+print("Database schema ensured.")
+PYCODE
+
 # --- Create systemd service ---
 SERVICE_FILE=/etc/systemd/system/refconbot.service
 sudo bash -c "cat > $SERVICE_FILE" <<EOL
@@ -100,6 +108,7 @@ EOL
 
 sudo systemctl daemon-reload
 sudo systemctl enable refconbot.service
-sudo systemctl restart refconbot.service
+sudo systemctl restart refconbot.service --no-block
 
 echo "=== Refuge Economy Bot installed and running ==="
+echo "=== API is available at http://<your-server-ip>:8848 ==="
