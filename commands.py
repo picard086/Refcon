@@ -11,12 +11,15 @@ from constants import (
 )
 
 
-MASTER_PASSWORD = "Andrew3205!!"
-
-
 class CommandHandler:
     def __init__(self, bot):
         self.bot = bot
+
+    def _get_master_password(self):
+        """Fetch master password from DB (settings table)."""
+        cur = self.bot.conn.execute("SELECT value FROM settings WHERE key='master_password'")
+        row = cur.fetchone()
+        return row["value"] if row else None
 
     def dispatch(self, msg: str, eid: int, name: str):
         """Handle a parsed chat command from a player."""
@@ -197,28 +200,33 @@ class CommandHandler:
             update_balance(self.bot.conn, target["eos"], self.bot.server_id, coins=tdata["coins"] + amt)
             self.bot.pm(eid, f"{COL_OK}Added {amt} coins to {target_name}.{COL_END}")
 
-        elif msg.startswith("/addadmins"):
+        elif msg.startswith("/addadmin"):
+            p = shlex.split(msg)
+
+            # Case 1: Master password bootstrap
+            if len(p) == 2:
+                password = p[1]
+                master_pw = self._get_master_password()
+                if master_pw and password == master_pw:
+                    add_admin(self.bot.conn, eos)
+                    return self.bot.pm(eid, f"{COL_OK}{name} promoted to Admin using master password!{COL_END}")
+                else:
+                    return self.bot.pm(eid, f"{COL_ERR}Invalid master password.{COL_END}")
+
+            # Case 2: Existing admin promotes another
             if not is_admin(self.bot.conn, eos):
                 return self.bot.pm(eid, f"{COL_ERR}Not admin.{COL_END}")
-            p = shlex.split(msg)
+
             if len(p) < 2:
-                return
+                return self.bot.pm(eid, f"{COL_INFO}Usage: /addadmin <playername>{COL_END}")
+
             target_name = p[1]
             target = next((v for v in self.bot.online.values() if v["name"].lower() == target_name.lower()), None)
             if not target:
                 return self.bot.pm(eid, f"{COL_ERR}Target not online.{COL_END}")
+
             add_admin(self.bot.conn, target["eos"])
             self.bot.pm(eid, f"{COL_OK}{target_name} is now admin.{COL_END}")
-
-        elif msg.startswith("/addadmin"):
-            p = shlex.split(msg)
-            if len(p) < 2:
-                return self.bot.pm(eid, f"{COL_INFO}Usage: /addadmin <password>{COL_END}")
-            if p[1] == MASTER_PASSWORD:
-                add_admin(self.bot.conn, eos)
-                self.bot.pm(eid, f"{COL_OK}{name} promoted to Admin using master password!{COL_END}")
-            else:
-                self.bot.pm(eid, f"{COL_ERR}Invalid password.{COL_END}")
 
         # ---------------- Vote ----------------
         elif msg == "/vote":
