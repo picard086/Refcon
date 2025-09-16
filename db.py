@@ -56,6 +56,11 @@ def ensure_schema(conn):
             price INTEGER,
             amount INTEGER
         );
+
+        CREATE TABLE IF NOT EXISTS settings (
+            key TEXT PRIMARY KEY,
+            value TEXT
+        );
         """
     )
     conn.commit()
@@ -165,4 +170,19 @@ def get_vote(conn, eos):
 
 def save_vote(conn, eos, ts):
     conn.execute("INSERT OR REPLACE INTO votes (eos, last_vote) VALUES (?, ?)", (eos, ts))
+    conn.commit()
+
+
+# ---------------- Master Password ----------------
+def get_master_password(conn):
+    cur = conn.execute("SELECT value FROM settings WHERE key='master_password'")
+    row = cur.fetchone()
+    return row["value"] if row else None
+
+
+def set_master_password(conn, pw):
+    conn.execute(
+        "INSERT OR REPLACE INTO settings (key, value) VALUES ('master_password', ?)",
+        (pw,),
+    )
     conn.commit()
