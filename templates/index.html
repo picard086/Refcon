@@ -7,242 +7,87 @@
 </head>
 <body class="bg-dark text-light">
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
   <div class="container-fluid">
-    <a class="navbar-brand fw-bold" href="/">Refcon Control Panel</a>
+    <a class="navbar-brand fw-bold" href="#">Refcon Control Panel</a>
   </div>
 </nav>
 
-<div class="container">
-  {% if msg %}
-    <div class="alert alert-info">{{ msg }}</div>
-  {% endif %}
+<div class="container mt-4">
 
-  <div class="row g-4">
+  <!-- Tabs -->
+  <ul class="nav nav-tabs" id="panelTabs" role="tablist">
+    <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#players">Players</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#shops">Shops</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#teleports">Teleports</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#utility">Utility</button></li>
+  </ul>
 
-    <!-- Add Donor -->
-    <div class="col-md-6">
-      <div class="card bg-secondary shadow">
-        <div class="card-header">Add Donor</div>
-        <div class="card-body">
-          <form method="post" action="/web_adddonor">
-            <input type="text" name="player" class="form-control mb-2" placeholder="Player" required>
-            <select name="tier" class="form-select mb-2" required>
-              <option value="t1">T1</option>
-              <option value="t2">T2</option>
-              <option value="t3">T3</option>
-            </select>
-            <input type="number" name="server_id" class="form-control mb-2" placeholder="Server ID" required>
-            <button type="submit" class="btn btn-primary w-100">Add Donor</button>
-          </form>
-        </div>
-      </div>
-    </div>
+  <div class="tab-content mt-3">
 
-    <!-- Add Gold -->
-    <div class="col-md-6">
-      <div class="card bg-secondary shadow">
-        <div class="card-header">Add Gold</div>
-        <div class="card-body">
-          <form method="post" action="/web_addgold">
-            <input type="text" name="player" class="form-control mb-2" placeholder="Player" required>
-            <input type="number" name="amount" class="form-control mb-2" placeholder="Amount" required>
-            <input type="number" name="server_id" class="form-control mb-2" placeholder="Server ID" required>
-            <button type="submit" class="btn btn-warning w-100">Add Gold</button>
-          </form>
-        </div>
-      </div>
-    </div>
-
-    <!-- Check Player -->
-    <div class="col-md-6">
-      <div class="card bg-secondary shadow">
-        <div class="card-header">Check Player</div>
-        <div class="card-body">
-          <form method="post" action="/web_checkplayer">
-            <input type="text" name="player" class="form-control mb-2" placeholder="Player" required>
-            <input type="number" name="server_id" class="form-control mb-2" placeholder="Server ID" required>
-            <button type="submit" class="btn btn-info w-100">Check</button>
-          </form>
-        </div>
-      </div>
-    </div>
-
-    <!-- Send PM -->
-    <div class="col-md-6">
-      <div class="card bg-secondary shadow">
-        <div class="card-header">Send PM</div>
-        <div class="card-body">
-          <form method="post" action="/web_pm">
-            <input type="text" name="player" class="form-control mb-2" placeholder="Player" required>
-            <input type="text" name="message" class="form-control mb-2" placeholder="Message" required>
-            <input type="number" name="server_id" class="form-control mb-2" placeholder="Server ID" required>
-            <button type="submit" class="btn btn-success w-100">Send</button>
-          </form>
-        </div>
-      </div>
-    </div>
-
-    <!-- Rewards -->
-    <div class="col-md-6">
-      <div class="card bg-secondary shadow">
-        <div class="card-header">Rewards</div>
-        <div class="card-body">
-          <form method="post" action="/web_gimme">
-            <input type="number" name="server_id" class="form-control mb-2" placeholder="Server ID">
-            <button type="submit" class="btn btn-outline-light w-100">Trigger Gimme</button>
-          </form>
-          <form method="post" action="/web_daily" class="mt-2">
-            <input type="number" name="server_id" class="form-control mb-2" placeholder="Server ID">
-            <button type="submit" class="btn btn-outline-light w-100">Trigger Daily</button>
-          </form>
-          <form method="post" action="/web_vote" class="mt-2">
-            <input type="number" name="server_id" class="form-control mb-2" placeholder="Server ID">
-            <button type="submit" class="btn btn-outline-light w-100">Save Vote</button>
-          </form>
-        </div>
-      </div>
-    </div>
-
-    <!-- Teleports -->
-    <div class="col-md-6">
-      <div class="card bg-secondary shadow">
-        <div class="card-header">Teleports</div>
-        <div class="card-body">
-          <form method="post" action="/web_settp">
-            <input type="text" name="player" class="form-control mb-2" placeholder="Player">
-            <input type="text" name="tpname" class="form-control mb-2" placeholder="TP name">
-            <input type="number" name="server_id" class="form-control mb-2" placeholder="Server ID">
-            <button type="submit" class="btn btn-outline-warning w-100">Set TP</button>
-          </form>
-          <form method="post" action="/web_tplist" class="mt-2">
-            <input type="text" name="player" class="form-control mb-2" placeholder="Player">
-            <input type="number" name="server_id" class="form-control mb-2" placeholder="Server ID">
-            <button type="submit" class="btn btn-outline-warning w-100">List TPs</button>
-          </form>
-          <form method="post" action="/web_deltp" class="mt-2">
-            <input type="text" name="tpname" class="form-control mb-2" placeholder="TP name">
-            <input type="number" name="server_id" class="form-control mb-2" placeholder="Server ID">
-            <button type="submit" class="btn btn-outline-warning w-100">Delete TP</button>
-          </form>
-        </div>
-      </div>
+    <!-- Players Tab -->
+    <div class="tab-pane fade show active" id="players">
+      <h4>Online Players</h4>
+      <table class="table table-dark table-striped align-middle" id="playersTable">
+        <thead>
+          <tr>
+            <th>EID</th>
+            <th>Name</th>
+            <th>EOS/Steam</th>
+            <th>Position</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
     </div>
 
     <!-- Shops -->
-    <div class="col-md-6">
-      <div class="card bg-secondary shadow">
-        <div class="card-header">Shops</div>
-        <div class="card-body">
-          <form method="post" action="/web_shop">
-            <input type="number" name="server_id" class="form-control mb-2" placeholder="Server ID">
-            <button type="submit" class="btn btn-outline-info w-100">Open Shop</button>
-          </form>
-          <form method="post" action="/web_goldshop" class="mt-2">
-            <input type="number" name="server_id" class="form-control mb-2" placeholder="Server ID">
-            <button type="submit" class="btn btn-outline-info w-100">Open Gold Shop</button>
-          </form>
-          <form method="post" action="/web_buy" class="mt-2">
-            <input type="number" name="itemid" class="form-control mb-2" placeholder="Item ID">
-            <input type="number" name="server_id" class="form-control mb-2" placeholder="Server ID">
-            <button type="submit" class="btn btn-outline-info w-100">Buy Item</button>
-          </form>
-          <form method="post" action="/web_goldbuy" class="mt-2">
-            <input type="number" name="itemid" class="form-control mb-2" placeholder="Item ID">
-            <input type="number" name="server_id" class="form-control mb-2" placeholder="Server ID">
-            <button type="submit" class="btn btn-outline-info w-100">Buy with Gold</button>
-          </form>
-        </div>
-      </div>
+    <div class="tab-pane fade" id="shops">
+      <h4>Shops</h4>
+      <form method="post" action="/web_shop" class="mb-2">
+        <input type="number" name="server_id" class="form-control mb-2" placeholder="Server ID">
+        <button type="submit" class="btn btn-outline-info">Open Shop</button>
+      </form>
+      <form method="post" action="/web_goldshop">
+        <input type="number" name="server_id" class="form-control mb-2" placeholder="Server ID">
+        <button type="submit" class="btn btn-outline-info">Open Gold Shop</button>
+      </form>
+    </div>
+
+    <!-- Teleports -->
+    <div class="tab-pane fade" id="teleports">
+      <h4>Teleport Commands</h4>
+      <form method="post" action="/web_settp">
+        <input type="text" name="player" class="form-control mb-2" placeholder="Player">
+        <input type="text" name="tpname" class="form-control mb-2" placeholder="TP name">
+        <input type="number" name="server_id" class="form-control mb-2" placeholder="Server ID">
+        <button type="submit" class="btn btn-outline-warning">Set TP</button>
+      </form>
     </div>
 
     <!-- Utility -->
-    <div class="col-md-6">
-      <div class="card bg-secondary shadow">
-        <div class="card-header">Utility</div>
-        <div class="card-body">
-          <form method="post" action="/web_say">
-            <input type="text" name="message" class="form-control mb-2" placeholder="Message">
-            <input type="number" name="server_id" class="form-control mb-2" placeholder="Server ID">
-            <button type="submit" class="btn btn-outline-danger w-100">Broadcast</button>
-          </form>
-          <form method="post" action="/web_soil" class="mt-2">
-            <input type="number" name="server_id" class="form-control mb-2" placeholder="Server ID">
-            <button type="submit" class="btn btn-outline-danger w-100">Soil</button>
-          </form>
-          <form method="post" action="/web_kick" class="mt-2">
-            <input type="text" name="player" class="form-control mb-2" placeholder="Player">
-            <input type="number" name="server_id" class="form-control mb-2" placeholder="Server ID">
-            <button type="submit" class="btn btn-outline-danger w-100">Kick</button>
-          </form>
-          <form method="post" action="/web_ban" class="mt-2">
-            <input type="text" name="player" class="form-control mb-2" placeholder="Player">
-            <input type="number" name="server_id" class="form-control mb-2" placeholder="Server ID">
-            <button type="submit" class="btn btn-outline-danger w-100">Ban</button>
-          </form>
-        </div>
-      </div>
-    </div>
-
-    <!-- Raw Command -->
-    <div class="col-12">
-      <div class="card bg-dark shadow">
-        <div class="card-header">Raw Command</div>
-        <div class="card-body">
-          <form id="rawForm">
-            <input type="text" id="cmd" class="form-control mb-2" placeholder="/ping" required>
-            <input type="number" id="server_id" class="form-control mb-2" placeholder="Server ID">
-            <button type="submit" class="btn btn-danger w-100">Run</button>
-          </form>
-          <pre id="result" class="mt-3 text-warning"></pre>
-        </div>
-      </div>
-    </div>
-
-    <!-- Online Players -->
-    <div class="col-12">
-      <div class="card bg-secondary shadow">
-        <div class="card-header">Online Players</div>
-        <div class="card-body">
-          <table class="table table-dark table-striped" id="playersTable">
-            <thead>
-              <tr>
-                <th>EID</th>
-                <th>Name</th>
-                <th>EOS/Steam</th>
-                <th>Position</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </div>
+    <div class="tab-pane fade" id="utility">
+      <h4>Utility Commands</h4>
+      <form method="post" action="/web_say">
+        <input type="text" name="message" class="form-control mb-2" placeholder="Message">
+        <input type="number" name="server_id" class="form-control mb-2" placeholder="Server ID">
+        <button type="submit" class="btn btn-outline-danger">Broadcast</button>
+      </form>
     </div>
 
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-// Raw command form
-document.getElementById("rawForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const cmd = document.getElementById("cmd").value;
-  const serverId = document.getElementById("server_id").value;
-  const res = await fetch("/run_command", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({cmd: cmd, server_id: serverId || null})
-  });
-  const data = await res.json();
-  document.getElementById("result").textContent = JSON.stringify(data, null, 2);
-});
-
-// Auto-refresh online players
+// Fetch online players and build table with actions
 async function loadPlayers() {
   const res = await fetch("/online_players");
   const data = await res.json();
   const tbody = document.querySelector("#playersTable tbody");
   tbody.innerHTML = "";
+
   for (const [serverId, players] of Object.entries(data)) {
     players.forEach(p => {
       const tr = document.createElement("tr");
@@ -251,14 +96,45 @@ async function loadPlayers() {
         <td>${p.name}</td>
         <td>${p.eos}</td>
         <td>${p.pos || "?"}</td>
+        <td>
+          <div class="btn-group">
+            <button class="btn btn-sm btn-primary" onclick="addDonor('${p.name}', 't1', ${serverId})">Donor T1</button>
+            <button class="btn btn-sm btn-primary" onclick="addDonor('${p.name}', 't2', ${serverId})">T2</button>
+            <button class="btn btn-sm btn-primary" onclick="addDonor('${p.name}', 't3', ${serverId})">T3</button>
+            <button class="btn btn-sm btn-warning" onclick="addGold('${p.name}', 1000, ${serverId})">+1k Gold</button>
+            <button class="btn btn-sm btn-danger" onclick="kickPlayer('${p.name}', ${serverId})">Kick</button>
+          </div>
+        </td>
       `;
       tbody.appendChild(tr);
     });
   }
 }
+
+async function addDonor(player, tier, serverId) {
+  await fetch("/web_adddonor", {
+    method: "POST",
+    body: new URLSearchParams({player, tier, server_id: serverId})
+  });
+  loadPlayers();
+}
+
+async function addGold(player, amount, serverId) {
+  await fetch("/web_addgold", {
+    method: "POST",
+    body: new URLSearchParams({player, amount, server_id: serverId})
+  });
+}
+
+async function kickPlayer(player, serverId) {
+  await fetch("/web_kick", {
+    method: "POST",
+    body: new URLSearchParams({player, server_id: serverId})
+  });
+}
+
 setInterval(loadPlayers, 5000);
 loadPlayers();
 </script>
-
 </body>
 </html>
