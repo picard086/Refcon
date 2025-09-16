@@ -106,7 +106,7 @@ class CommandHandler:
                 return self.bot.pm(eid, f"{COL_INFO}Usage: /settp <name>{COL_END}")
             pos = self.bot.online.get(eid, {}).get("pos", (0, 0, 0))
             add_teleport(self.bot.conn, pdata["id"], p[1], pos)
-            self.bot.pm(eid, f"{COL_OK}Teleport '{p[1]}' saved.{COL_END}")
+            self.bot.pm(eid, f"{COL_OK}Teleport '{p[1]}' saved at {pos}.{COL_END}")
 
         elif msg == "/tplist":
             tps = get_teleports(self.bot.conn, pdata["id"])
@@ -130,8 +130,11 @@ class CommandHandler:
             tp = next((t for t in tps if t["name"].lower() == p[1].lower()), None)
             if not tp:
                 return self.bot.pm(eid, f"{COL_ERR}Teleport not found.{COL_END}")
-            self.bot.send(f"teleportplayer {eid} {tp['x']} {tp['y']} {tp['z']}")
-            self.bot.pm(eid, f"{COL_OK}Teleported to {p[1]}!{COL_END}")
+
+            # Ensure coords are floats
+            x, y, z = float(tp["x"]), float(tp["y"]), float(tp["z"])
+            self.bot.send(f"teleportplayer {eid} {x} {y} {z}")
+            self.bot.pm(eid, f"{COL_OK}Teleported to {tp['name']} at ({x}, {y}, {z})!{COL_END}")
 
         # ---------------- Admin ----------------
         elif msg.startswith("/addcoins"):
