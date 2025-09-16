@@ -60,7 +60,7 @@ class EconomyBot:
             if message.strip().startswith("/"):
                 self.cmd_handler.dispatch(message.strip(), eid, name)
 
-        # Position update from spawn log
+        # Position update from spawn logs
         pos_match = re.search(r"PlayerSpawnedInWorld.*at \(([-\d\.]+), ([-\d\.]+), ([-\d\.]+)\)", line)
         if pos_match:
             x, y, z = map(float, pos_match.groups())
@@ -72,11 +72,14 @@ class EconomyBot:
                         pdata["pos"] = (x, y, z)
 
         # Position update from `lp` (listplayers) output
-        lp_match = re.search(r"id=(\d+).*name=([^,]+).*pos=\(([-\d]+), ([-\d]+), ([-\d]+)\)", line)
+        lp_match = re.search(
+            r"id=(\d+), ([^,]+), pos=\(([-\d\.]+), ([-\d\.]+), ([-\d\.]+)\)",
+            line
+        )
         if lp_match:
             eid = int(lp_match[1])
             name = lp_match[2].strip()
-            x, y, z = int(lp_match[3]), int(lp_match[4]), int(lp_match[5])
+            x, y, z = float(lp_match[3]), float(lp_match[4]), float(lp_match[5])
             if eid not in self.online:
                 self.online[eid] = {}
             self.online[eid].update({
