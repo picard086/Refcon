@@ -116,8 +116,8 @@ class CommandHandler:
             self.bot.pm(eid, f"{COL_OK}+{coins} daily Refuge Coins!{COL_END}")
 
         elif msg == "/soil":
-            self.bot.send(f"giveplus {eid} resourceFertilizer 50")
-            self.bot.pm(eid, f"{COL_OK}You received 50 Soil!{COL_END}")
+            self.bot.send(f"giveplus {eid} terrTopSoil 300")
+            self.bot.pm(eid, f"{COL_OK}You received 300 Top Soil!{COL_END}")
 
         # ---------------- Teleports ----------------
         elif msg.startswith("/settp"):
@@ -195,10 +195,54 @@ class CommandHandler:
             update_balance(self.bot.conn, target["eos"], self.bot.server_id, coins=tdata["coins"] + amt)
             self.bot.pm(eid, f"{COL_OK}Added {amt} coins to {target_name}.{COL_END}")
 
+        elif msg.startswith("/addgold"):
+            if not is_admin(self.bot.conn, eos):
+                return self.bot.pm(eid, f"{COL_ERR}Not admin.{COL_END}")
+            p = shlex.split(msg)
+            if len(p) < 3:
+                return
+            target_name, amt = p[1], int(p[2])
+            target = next((v for v in self.bot.online.values() if v["name"].lower() == target_name.lower()), None)
+            if not target:
+                return self.bot.pm(eid, f"{COL_ERR}Target not online.{COL_END}")
+            tdata = get_player(self.bot.conn, target["eos"], self.bot.server_id)
+            update_balance(self.bot.conn, target["eos"], self.bot.server_id, gold=tdata["gold"] + amt)
+            self.bot.pm(eid, f"{COL_OK}Added {amt} gold to {target_name}.{COL_END}")
+
+        elif msg.startswith("/adddonor"):
+            if not is_admin(self.bot.conn, eos):
+                return self.bot.pm(eid, f"{COL_ERR}Not admin.{COL_END}")
+            p = shlex.split(msg)
+            if len(p) < 3:
+                return self.bot.pm(eid, f"{COL_INFO}Usage: /adddonor <playername> <tier>{COL_END}")
+            target_name, tier = p[1], p[2].lower()
+            if tier not in DONOR_TIERS:
+                return self.bot.pm(eid, f"{COL_ERR}Invalid donor tier. Available: {', '.join(DONOR_TIERS.keys())}{COL_END}")
+            target = next((v for v in self.bot.online.values() if v["name"].lower() == target_name.lower()), None)
+            if not target:
+                return self.bot.pm(eid, f"{COL_ERR}Target not online.{COL_END}")
+
+            tdata = get_player(self.bot.conn, target["eos"], self.bot.server_id)
+            tierinfo = DONOR_TIERS[tier]
+
+            new_coins = tdata["coins"] + tierinfo.get("coins", 0)
+            new_gold = tdata["gold"] + tierinfo.get("gold", 0)
+            update_balance(self.bot.conn, target["eos"], self.bot.server_id, coins=new_coins, gold=new_gold)
+            update_field(self.bot.conn, target["eos"], self.bot.server_id, "multiplier", tierinfo.get("multiplier", 1.0))
+            update_field(self.bot.conn, target["eos"], self.bot.server_id, "donor", tier)
+
+            # Notify player
+            self.bot.pm(target["eid"], f"{COL_OK}You have been granted Donor Tier {tier.upper()}!{COL_END}")
+            self.bot.pm(target["eid"], f"{COL_GOLD}+{tierinfo.get('coins',0)} coins, +{tierinfo.get('gold',0)} gold, Multiplier set to x{tierinfo.get('multiplier',1.0)}{COL_END}")
+            self.bot.pm(target["eid"], f"{COL_INFO}Use /donor to claim your donor pack.{COL_END}")
+
+            # Notify admin
+            self.bot.pm(eid, f"{COL_OK}{target_name} is now a Donor {tier.upper()}.{COL_END}")
+
         elif msg.startswith("/addadmin"):
             p = shlex.split(msg)
 
-            # Case 1: Master password bootstrap
+            # Only bootstrap via master password
             if len(p) == 2:
                 password = p[1]
                 master_pw = get_master_password(self.bot.conn)
@@ -208,18 +252,18 @@ class CommandHandler:
                 else:
                     return self.bot.pm(eid, f"{COL_ERR}Invalid master password.{COL_END}")
 
-            # Case 2: Existing admin promotes another
+            return self.bot.pm(eid, f"{COL_INFO}Usage: /addadmin <masterpassword>{COL_END}")
+
+        elif msg.startswith("/addadmins"):
             if not is_admin(self.bot.conn, eos):
                 return self.bot.pm(eid, f"{COL_ERR}Not admin.{COL_END}")
-
+            p = shlex.split(msg)
             if len(p) < 2:
-                return self.bot.pm(eid, f"{COL_INFO}Usage: /addadmin <playername>{COL_END}")
-
+                return self.bot.pm(eid, f"{COL_INFO}Usage: /addadmins <playername>{COL_END}")
             target_name = p[1]
             target = next((v for v in self.bot.online.values() if v["name"].lower() == target_name.lower()), None)
             if not target:
                 return self.bot.pm(eid, f"{COL_ERR}Target not online.{COL_END}")
-
             add_admin(self.bot.conn, target["eos"])
             self.bot.pm(eid, f"{COL_OK}{target_name} is now admin.{COL_END}")
 
