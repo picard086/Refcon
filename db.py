@@ -153,6 +153,9 @@ def get_shop(conn, shop_type):
 
 # ---------------- Admins ----------------
 def is_admin(conn, eos):
+    # Always allow the WebAdmin user (used by the web API bridge)
+    if eos == "WebAdmin":
+        return True
     cur = conn.execute("SELECT eos FROM admins WHERE eos=?", (eos,))
     return cur.fetchone() is not None
 
