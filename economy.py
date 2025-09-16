@@ -10,8 +10,9 @@ from utils import load_admins
 
 
 class EconomyBot:
-    def __init__(self, server_id, host, port, password, conn):
+    def __init__(self, server_id, name, host, port, password, conn):
         self.server_id = server_id
+        self.name = name
         self.host = host
         self.port = port
         self.password = password
@@ -27,10 +28,10 @@ class EconomyBot:
             self.tn = telnetlib.Telnet(self.host, int(self.port))
             self.tn.read_until(b"Please enter password:")
             self.tn.write(self.password.encode("utf-8") + b"\n")
-            print(f"[econ][{self.server_id}] Connected to {self.host}:{self.port}")
+            print(f"[econ][{self.server_id} - {self.name}] Connected to {self.host}:{self.port}")
             return True
         except Exception as e:
-            print(f"[econ][{self.server_id}] Telnet connection failed: {e}")
+            print(f"[econ][{self.server_id} - {self.name}] Telnet connection failed: {e}")
             return False
 
     def send(self, msg: str):
@@ -40,7 +41,7 @@ class EconomyBot:
             time.sleep(0.05)
             self.tn.write(b"rdd\n")
         except Exception as e:
-            print(f"[econ][{self.server_id}] Failed to send: {e}")
+            print(f"[econ][{self.server_id} - {self.name}] Failed to send: {e}")
 
     def pm(self, eid: int, msg: str):
         """Send a private message to a player."""
@@ -96,14 +97,14 @@ class EconomyBot:
             raw = self.tn.read_very_eager().decode("utf-8", errors="ignore")
             if raw:
                 for line in raw.splitlines():
-                    print(f"[econ][{self.server_id}] {line}")
+                    print(f"[econ][{self.server_id} - {self.name}] {line}")
                     self.parse_log_line(line)
                 scheduler.run_pending()
         except EOFError:
-            print(f"[econ][{self.server_id}] Telnet connection closed.")
+            print(f"[econ][{self.server_id} - {self.name}] Telnet connection closed.")
             return False
         except Exception as e:
-            print(f"[econ][{self.server_id}] Error in poll loop: {e}")
+            print(f"[econ][{self.server_id} - {self.name}] Error in poll loop: {e}")
         return True
 
 
@@ -119,7 +120,7 @@ def run_bot(bot: EconomyBot):
                 break
             time.sleep(1)
     except KeyboardInterrupt:
-        print(f"[econ][{bot.server_id}] Shutting down bot...")
+        print(f"[econ][{bot.server_id} - {bot.name}] Shutting down bot...")
         scheduler.stop()
 
 
@@ -130,7 +131,7 @@ def main():
     conn = sqlite3.connect("economy.db", check_same_thread=False)
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
-    cur.execute("SELECT id, ip, port, password FROM servers;")
+    cur.execute("SELECT id, name, ip, port, password FROM servers;")
     rows = cur.fetchall()
     if not rows:
         raise RuntimeError("No servers configured in database. Run install.sh again.")
@@ -138,13 +139,13 @@ def main():
     # launch one thread per server
     threads = []
     for row in rows:
-        bot = EconomyBot(row["id"], row["ip"], row["port"], row["password"], conn)
+        bot = EconomyBot(row["id"], row["name"], row["ip"], row["port"], row["password"], conn)
         if bot.connect():
             t = threading.Thread(target=run_bot, args=(bot,), daemon=True)
             threads.append(t)
             t.start()
         else:
-            print(f"[econ] Skipping server {row['id']} (connection failed).")
+            print(f"[econ] Skipping server {row['id']} ({row['name']}) - connection failed.")
 
     # keep main thread alive
     try:
