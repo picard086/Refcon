@@ -8,8 +8,10 @@ from scheduler import Scheduler
 from commands import CommandHandler
 from utils import load_admins
 
-# --- NEW IMPORTS for API bridge ---
-from fastapi import FastAPI, Request
+# --- NEW IMPORTS for API bridge + web UI ---
+from fastapi import FastAPI, Request, Form
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
 import uvicorn
 
 
@@ -135,6 +137,36 @@ def run_bot(bot: EconomyBot):
 # ---- NEW: API Bridge ----
 bot_api = FastAPI()
 bot_instances = []  # keep track of all bots
+
+# ---- NEW: Web UI (templates + routes) ----
+templates = Jinja2Templates(directory="templates")
+
+@bot_api.get("/", response_class=HTMLResponse)
+async def home(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
+
+@bot_api.post("/web_adddonor")
+async def web_adddonor(
+    request: Request,
+    player: str = Form(...),
+    tier: str = Form(...),
+    server_id: int = Form(...)
+):
+    cmd = f"/adddonor {player} {tier}"
+    for bot in bot_instances:
+        if str(bot.server_id) == str(server_id):
+            # ensure WebAdmin is present as an online actor
+            bot.online[0] = {"name": "WebAdmin", "eos": "WebAdmin"}
+            bot.cmd_handler.dispatch(cmd, 0, "WebAdmin", "WebAdmin")
+            return templates.TemplateResponse("index.html", {
+                "request": request,
+                "msg": f"{player} is now donor {tier.upper()} on server {server_id}"
+            })
+    return templates.TemplateResponse("index.html", {
+        "request": request,
+        "msg": "Server not found"
+    })
+
 
 @bot_api.post("/run_command")
 async def run_command(request: Request):
