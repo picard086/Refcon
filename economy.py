@@ -228,16 +228,17 @@ async def web_say(request: Request, message: str = Form(...), server_id: int = F
 
 @bot_api.post("/web_kick")
 async def web_kick(request: Request, player: str = Form(...), server_id: int = Form(...)):
-    # Send a real console command via Telnet/RCON (names with spaces are quoted)
     bots = [b for b in bot_instances if str(b.server_id) == str(server_id)]
     if not bots:
         return templates.TemplateResponse("index.html", {"request": request, "msg": "Server not found"})
     try:
         bot = bots[0]
+        # Send a raw console command so it works
         bot.send(f'kick "{player}"')
-        return templates.TemplateResponse("index.html", {"request": request, "msg": f'Kicked {player}'})
+        return templates.TemplateResponse("index.html", {"request": request, "msg": f"Kicked {player}"})
     except Exception as e:
         return templates.TemplateResponse("index.html", {"request": request, "msg": str(e)})
+
 
 @bot_api.post("/web_ban")
 async def web_ban(request: Request, player: str = Form(...), server_id: int = Form(...)):
@@ -336,3 +337,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
