@@ -99,7 +99,7 @@ class EconomyBot:
                 
             self.online[eid].update({
                 "name": name,
-                "pos": (x, y, z)
+                "pos": (x, y, z),
                 "steam": steam_id,
                 "eos": eos_id
             })
@@ -333,6 +333,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
