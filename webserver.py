@@ -7,15 +7,15 @@ import threading, time
 
 # Config
 DB_PATH = "economy.db"
-BOT_API_URL = "http://127.0.0.1:8899/run_command"  # bot will expose this later
+BOT_API_URL = "http://127.0.0.1:8899/run_command"   # bot endpoint for commands
 BOT_PLAYERS_URL = "http://127.0.0.1:8899/online_players"
 
-app = FastAPI(title="RefconBot Web Panel", version="0.1")
+app = FastAPI(title="RefconBot Web Panel", version="0.2")
 
 # ---- Models ----
 class DonorRequest(BaseModel):
     player: str
-    tier: str
+    tier: str   # now supports t1, t2, t3, t4
 
 class BalanceRequest(BaseModel):
     player: str
@@ -54,13 +54,18 @@ def get_players():
 
 @app.post("/donor")
 def set_donor(req: DonorRequest):
-    query_db("UPDATE players SET donor = ? WHERE name = ?;", (req.tier, req.player))
+    tier = req.tier.lower()
+    if tier not in ["t1", "t2", "t3", "t4"]:
+        raise HTTPException(status_code=400, detail="Invalid donor tier (use t1, t2, t3, or t4)")
+
+    query_db("UPDATE players SET donor = ? WHERE name = ?;", (tier, req.player))
+
     # notify bot so it tells the player in-game
     try:
-        requests.post(BOT_API_URL, json={"cmd": f"/adddonor {req.player} {req.tier}"})
+        requests.post(BOT_API_URL, json={"cmd": f"/adddonor {req.player} {tier}"})
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Bot notification failed: {e}")
-    return {"status": "ok", "player": req.player, "tier": req.tier}
+    return {"status": "ok", "player": req.player, "tier": tier}
 
 @app.post("/balance")
 def set_balance(req: BalanceRequest):
