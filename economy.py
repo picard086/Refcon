@@ -81,7 +81,7 @@ class EconomyBot:
             })
 
             if message.strip().startswith("/"):
-                self.cmd_handler.dispatch(message.strip(), eid, name)
+                self.cmd_handler.dispatch(message.strip(), eid, name, eos_id or steam_id)
 
         # Position update from spawn logs
         pos_match = re.search(r"PlayerSpawnedInWorld.*at \(([-\d\.]+), ([-\d\.]+), ([-\d\.]+)\)", line)
@@ -349,3 +349,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
