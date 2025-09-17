@@ -80,23 +80,24 @@ def get_player(conn, eos, server_id, name=None):
         )
         conn.commit()
 
-    # 1. Try EOS match first
+    # 1. Try EOS match
     cur = conn.execute(
         "SELECT * FROM players WHERE eos=? AND server_id=?", (eos, server_id)
     )
     row = cur.fetchone()
 
-    # 2. If no EOS row, try name fallback
+    # 2. Fallback: match by name if EOS didn't match
     if not row and name:
         cur = conn.execute(
             "SELECT * FROM players WHERE name=? AND server_id=?", (name, server_id)
         )
         row = cur.fetchone()
 
+    # 3. Return existing row if found
     if row:
         return dict(row)
 
-    # 3. Only if truly nothing exists, insert once
+    # 4. Insert new row only if nothing matches at all
     conn.execute(
         """
         INSERT INTO players (server_id, eos, name, coins, gold, multiplier, donor,
