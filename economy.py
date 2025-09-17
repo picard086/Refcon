@@ -28,6 +28,9 @@ class EconomyBot:
         self.online = {}   # {eid: {"name": str, "eos": str, "steam": str, "pos": (x,y,z)}}
         self.conn = conn   # shared database connection
 
+        # --- attach scheduler to each bot ---
+        self.scheduler = Scheduler(self)
+
     def connect(self):
         """Connect to the 7DTD server via Telnet."""
         try:
@@ -102,8 +105,7 @@ class EconomyBot:
                 "eos": crossid if crossid.startswith("EOS_") else None
             })
 
-
-    def poll(self, scheduler):
+    def poll(self):
         """Poll Telnet messages and feed them to command handler."""
         try:
             raw = self.tn.read_very_eager().decode("utf-8", errors="ignore")
@@ -111,7 +113,7 @@ class EconomyBot:
                 for line in raw.splitlines():
                     print(f"[econ][{self.server_id} - {self.name}] {line}")
                     self.parse_log_line(line)
-                scheduler.run_pending()
+                self.scheduler.run_pending()
         except EOFError:
             print(f"[econ][{self.server_id} - {self.name}] Telnet connection closed.")
             return False
@@ -126,17 +128,17 @@ def run_bot(bot: EconomyBot):
     if "WebAdmin" not in bot.admins:
         bot.admins.append("WebAdmin")
 
-    scheduler = Scheduler(bot)
-    scheduler.start()
+    # start scheduler already attached to bot
+    bot.scheduler.start()
 
     try:
         while True:
-            if not bot.poll(scheduler):
+            if not bot.poll():
                 break
             time.sleep(1)
     except KeyboardInterrupt:
         print(f"[econ][{bot.server_id} - {bot.name}] Shutting down bot...")
-        scheduler.stop()
+        bot.scheduler.stop()
 
 
 # ---- NEW: API Bridge ----
@@ -298,7 +300,6 @@ def _dispatch_json(cmd: str, target_server: int = None):
     return {"status": "ok", "cmd": cmd, "servers": [b.server_id for b in bots]}
 
 
-
 def start_bot_api():
     uvicorn.run(bot_api, host="0.0.0.0", port=8848, log_level="info")
 
@@ -348,6 +349,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
