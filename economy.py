@@ -7,6 +7,8 @@ import threading
 from scheduler import Scheduler
 from commands import CommandHandler
 from utils import load_admins
+from db import get_player
+
 
 # --- NEW IMPORTS for API bridge + web UI ---
 from fastapi import FastAPI, Request, Form
@@ -349,6 +351,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
