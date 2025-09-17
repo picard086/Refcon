@@ -128,8 +128,8 @@ def run_bot(bot: EconomyBot):
     if "WebAdmin" not in bot.admins:
         bot.admins.append("WebAdmin")
 
-    # Make lp run every 5s instead of 30
-    scheduler = Scheduler(bot, income_interval=60, lp_interval=5)
+    # Make lp run every 10s instead of 30
+    scheduler = Scheduler(bot, income_interval=60, lp_interval=10)
     bot.scheduler = scheduler  # attach so bot has a reference
     scheduler.start()
 
@@ -347,5 +347,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
