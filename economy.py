@@ -67,12 +67,21 @@ class EconomyBot:
         if chat_match:
             eos_or_steam, eid, name, message = chat_match.groups()
             eid = int(eid)
+
+            # 🔥 Normalize the EOS/Steam ID (remove stray commas/whitespace)
+            eos_or_steam = eos_or_steam.strip().rstrip(",")
+
             if eid not in self.online:
                 self.online[eid] = {}
-            self.online[eid].update({"name": name, "eos": eos_or_steam, "steam": eos_or_steam})
+            self.online[eid].update({
+                "name": name,
+                "eos": eos_or_steam,
+                "steam": eos_or_steam
+            })
 
             if message.strip().startswith("/"):
                 self.cmd_handler.dispatch(message.strip(), eid, name)
+
 
         # Position update from spawn logs
         pos_match = re.search(r"PlayerSpawnedInWorld.*at \(([-\d\.]+), ([-\d\.]+), ([-\d\.]+)\)", line)
@@ -94,18 +103,20 @@ class EconomyBot:
             eid = int(lp_match[1])
             name = lp_match[2].strip()
             x, y, z = float(lp_match[3]), float(lp_match[4]), float(lp_match[5])
-            steam_id = lp_match[6]
-            eos_id = lp_match[7]
-            
+
+            # 🔥 Normalize both IDs
+            steam_id = lp_match[6].strip().rstrip(",")
+            eos_id = lp_match[7].strip().rstrip(",")
+
             if eid not in self.online:
                 self.online[eid] = {}
-                
             self.online[eid].update({
                 "name": name,
                 "pos": (x, y, z),
                 "steam": steam_id,
                 "eos": eos_id
             })
+
 
     def poll(self, scheduler):
         """Poll Telnet messages and feed them to command handler."""
@@ -370,6 +381,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
