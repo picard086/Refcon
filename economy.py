@@ -240,6 +240,21 @@ async def web_kick(request: Request, player: str = Form(...), server_id: int = F
 async def web_ban(request: Request, player: str = Form(...), server_id: int = Form(...)):
     return await _dispatch_command(request, f"/ban {player}", server_id, f"Banned {player}")
 
+@bot_api.get("/web_get_tps")
+async def web_get_tps(player_id: int):
+    return get_teleports(bot_instances[0].conn, player_id)
+
+@bot_api.post("/web_addtp")
+async def web_addtp(player_id: int = Form(...), name: str = Form(...), x: float = Form(...), y: float = Form(...), z: float = Form(...)):
+    add_teleport(bot_instances[0].conn, player_id, name, (x,y,z))
+    return {"status": "ok"}
+
+@bot_api.post("/web_deltp")
+async def web_deltp(player_id: int = Form(...), name: str = Form(...)):
+    del_teleport(bot_instances[0].conn, player_id, name)
+    return {"status": "ok"}
+
+
 # --- Online players as JSON (skip WebAdmin) ---
 @bot_api.get("/online_players")
 async def online_players():
@@ -254,7 +269,8 @@ async def online_players():
                 "name": pdata.get("name"),
                 "id": pdata.get("eos"),
                 "steam": pdata.get("steam"),
-                "pos": pdata.get("pos")
+                "pos": pdata.get("pos"),
+                "player_id": get_player(bot.conn, pdata.get("eos"), bot.server_id, pdata.get("name"))["id"]
             })
         data[bot.server_id] = players
     return data
@@ -333,6 +349,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
