@@ -128,17 +128,20 @@ def run_bot(bot: EconomyBot):
     if "WebAdmin" not in bot.admins:
         bot.admins.append("WebAdmin")
 
-    # start scheduler already attached to bot
-    bot.scheduler.start()
+    # Make lp run every 5s instead of 30
+    scheduler = Scheduler(bot, income_interval=60, lp_interval=5)
+    bot.scheduler = scheduler  # attach so bot has a reference
+    scheduler.start()
 
     try:
         while True:
-            if not bot.poll():
+            if not bot.poll(scheduler):
                 break
             time.sleep(1)
     except KeyboardInterrupt:
         print(f"[econ][{bot.server_id} - {bot.name}] Shutting down bot...")
-        bot.scheduler.stop()
+        scheduler.stop()
+
 
 
 # ---- NEW: API Bridge ----
@@ -344,4 +347,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
