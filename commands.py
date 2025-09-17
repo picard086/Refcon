@@ -274,11 +274,11 @@ class CommandHandler:
                     f"{COL_ERR}Invalid donor tier. Available: {', '.join(DONOR_TIERS.keys())}{COL_END}"
                 )
 
-            teid, target = self._find_online_by_name(target_name.lower())
             tierinfo = DONOR_TIERS[tier]
+            teid, target = self._find_online_by_name(target_name.lower())
 
             if target:
-                # --- Online path (notify player + admin) ---
+                # --- Online path ---
                 tdata = get_player(self.bot.conn, target["eos"], self.bot.server_id)
                 new_coins = tdata["coins"] + tierinfo.get("coins", 0)
                 new_gold = tdata["gold"] + tierinfo.get("gold", 0)
@@ -298,8 +298,9 @@ class CommandHandler:
                 self.bot.pm(eid, f"{COL_OK}{target_name} is now a Donor {tier.upper()}.{COL_END}")
 
             else:
-                # --- Offline path (update DB, notify admin only) ---
-                pp = get_player(self.bot.conn, target_name, self.bot.server_id, target_name)
+                # --- Offline path ---
+                # Always fetch by EOS if known, otherwise create a placeholder row
+                pp = get_player(self.bot.conn, "Offline_"+target_name, self.bot.server_id, target_name)
                 new_coins = pp["coins"] + tierinfo.get("coins", 0)
                 new_gold = pp["gold"] + tierinfo.get("gold", 0)
                 update_balance(self.bot.conn, pp["eos"], self.bot.server_id,
@@ -312,6 +313,7 @@ class CommandHandler:
                              "donor_used", 0)
 
                 self.bot.pm(eid, f"{COL_OK}{target_name} (offline) is now a Donor {tier.upper()}.{COL_END}")
+
 
 
         elif msg.startswith("/removedonor"):
@@ -437,6 +439,7 @@ class CommandHandler:
                     self.bot.pm(eid, f"{COL_WARN}No vote found yet.{COL_END}")
             except Exception:
                 self.bot.pm(eid, f"{COL_ERR}Vote check failed.{COL_END}")
+
 
 
 
