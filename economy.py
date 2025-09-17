@@ -272,11 +272,11 @@ async def online_players():
 
             players.append({
                 "eid": eid,
-                "name": name,
-                "id": eos or steam or "?",
-                "steam": steam,
+                "name": pdata.get("name"),
+                "id": player_id,          # ✅ stable DB id
+                "steam": pdata.get("steam"),
                 "pos": pdata.get("pos"),
-                "player_id": player_id
+                "player_id": player_id    # keep for backwards compatibility
             })
         data[bot.server_id] = players
     return data
@@ -349,4 +349,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
