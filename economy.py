@@ -84,18 +84,24 @@ class EconomyBot:
 
         # Position update from `lp` (listplayers) output
         lp_match = re.search(
-             r"id=(\d+),\s*([^,]+),\s*pos=\(([-\d\.]+), ([-\d\.]+), ([-\d\.]+)\).*pltfmid=(\S+), crossid=(\S+)",
+            r"id=(\d+),\s*([^,]+),\s*pos=\(([-\d\.]+), ([-\d\.]+), ([-\d\.]+)\).*pltfmid=(\S+), crossid=(\S+)",
             line
         )
         if lp_match:
             eid = int(lp_match[1])
             name = lp_match[2].strip()
             x, y, z = float(lp_match[3]), float(lp_match[4]), float(lp_match[5])
+            steam_id = lp_match[6]
+            eos_id = lp_match[7]
+            
             if eid not in self.online:
                 self.online[eid] = {}
+                
             self.online[eid].update({
                 "name": name,
                 "pos": (x, y, z)
+                "steam": steam_id,
+                "eos": eos_id
             })
 
     def poll(self, scheduler):
@@ -327,6 +333,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
