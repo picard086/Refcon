@@ -280,13 +280,17 @@ async def online_players():
         for eid, pdata in bot.online.items():
             if pdata.get("name") == "WebAdmin":
                 continue
+
+            # Always resolve the correct DB row for this EOS+server_id
+            player_row = get_player(bot.conn, pdata.get("eos"), bot.server_id, pdata.get("name"))
+
             players.append({
                 "eid": eid,
                 "name": pdata.get("name"),
                 "id": pdata.get("eos"),
                 "steam": pdata.get("steam"),
                 "pos": pdata.get("pos"),
-                "player_id": get_player(bot.conn, pdata.get("eos"), bot.server_id, pdata.get("name"))["id"]
+                "player_id": player_row["id"]   # ✅ Real DB player_id
             })
         data[bot.server_id] = players
     return data
@@ -365,6 +369,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
