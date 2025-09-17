@@ -19,6 +19,7 @@ def ensure_schema(conn):
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             server_id TEXT,
             eos TEXT,
+            steam TEXT,
             name TEXT,
             coins INTEGER DEFAULT 0,
             gold INTEGER DEFAULT 0,
@@ -63,18 +64,23 @@ def ensure_schema(conn):
         );
         """
     )
+    # add steam column if missing
+    try:
+        conn.execute("ALTER TABLE players ADD COLUMN steam TEXT;")
+    except sqlite3.OperationalError:
+        pass
     conn.commit()
 
 
 # ---------------- Players ----------------
-def get_player(conn, eos, server_id, name=None):
+def get_player(conn, eos, server_id, name=None, steam=None):
     # Special handling for WebAdmin (API bridge user)
     if eos == "WebAdmin":
         conn.execute(
             """
-            INSERT OR IGNORE INTO players (server_id, eos, name, coins, gold, multiplier, donor,
+            INSERT OR IGNORE INTO players (server_id, eos, steam, name, coins, gold, multiplier, donor,
                                            starter_used, last_daily, last_gimme, streak)
-            VALUES (?, 'WebAdmin', 'WebAdmin', 0, 0, 1.0, NULL, 0, 0, 0, 0)
+            VALUES (?, 'WebAdmin', 'WebAdmin', 'WebAdmin', 0, 0, 1.0, NULL, 0, 0, 0, 0)
             """,
             (server_id,),
         )
@@ -86,25 +92,38 @@ def get_player(conn, eos, server_id, name=None):
     )
     row = cur.fetchone()
 
-    # 2. Fallback: match by name if EOS didn't match
+    # 2. Try Steam match
+    if not row and steam:
+        cur = conn.execute(
+            "SELECT * FROM players WHERE steam=? AND server_id=?", (steam, server_id)
+        )
+        row = cur.fetchone()
+
+    # 3. Try Name match
     if not row and name:
         cur = conn.execute(
             "SELECT * FROM players WHERE name=? AND server_id=?", (name, server_id)
         )
         row = cur.fetchone()
 
-    # 3. Return existing row if found
     if row:
-        return dict(row)
+        # Update EOS/Steam if missing
+        if not row["eos"] and eos:
+            conn.execute("UPDATE players SET eos=? WHERE id=?", (eos, row["id"]))
+        if not row["steam"] and steam:
+            conn.execute("UPDATE players SET steam=? WHERE id=?", (steam, row["id"]))
+        conn.commit()
+        cur = conn.execute("SELECT * FROM players WHERE id=?", (row["id"],))
+        return dict(cur.fetchone())
 
-    # 4. Insert new row only if nothing matches at all
+    # 4. Insert new row if nothing matches
     conn.execute(
         """
-        INSERT INTO players (server_id, eos, name, coins, gold, multiplier, donor,
+        INSERT INTO players (server_id, eos, steam, name, coins, gold, multiplier, donor,
                              starter_used, last_daily, last_gimme, streak)
-        VALUES (?, ?, ?, 0, 0, 1.0, NULL, 0, 0, 0, 0)
+        VALUES (?, ?, ?, ?, 0, 0, 1.0, NULL, 0, 0, 0, 0)
         """,
-        (server_id, eos, name or eos),
+        (server_id, eos, steam or eos, name or eos),
     )
     conn.commit()
 
