@@ -281,7 +281,7 @@ async def online_players():
             if pdata.get("name") == "WebAdmin":
                 continue
 
-            # Always resolve the correct DB row for this EOS+server_id
+            # Resolve real DB player row
             player_row = get_player(bot.conn, pdata.get("eos"), bot.server_id, pdata.get("name"))
 
             players.append({
@@ -290,10 +290,11 @@ async def online_players():
                 "id": pdata.get("eos"),
                 "steam": pdata.get("steam"),
                 "pos": pdata.get("pos"),
-                "player_id": player_row["id"]   # ✅ Real DB player_id
+                "player_id": player_row["id"]  # ✅ persistent DB ID
             })
         data[bot.server_id] = players
     return data
+
 
 
 # --- Shared dispatcher helpers ---
@@ -369,6 +370,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
