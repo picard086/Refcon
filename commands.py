@@ -26,6 +26,8 @@ class CommandHandler:
 
     def dispatch(self, msg: str, eid: int, name: str, eos: str = None):
         """Handle a parsed chat command from a player or WebAdmin."""
+        print(f"[dispatch] eid={eid}, name={name}, eos={eos}, msg={msg}")
+
         # allow API to override eos
         if eos is None:
             eos = self.bot.online.get(eid, {}).get("eos", str(eid))
@@ -435,6 +437,7 @@ class CommandHandler:
                     self.bot.pm(eid, f"{COL_WARN}No vote found yet.{COL_END}")
             except Exception:
                 self.bot.pm(eid, f"{COL_ERR}Vote check failed.{COL_END}")
+
 
 
 
