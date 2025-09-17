@@ -84,7 +84,7 @@ class EconomyBot:
 
         # Position update from `lp` (listplayers) output
         lp_match = re.search(
-            r"id=(\d+),\s*([^,]+),\s*pos=\(([-\d\.]+), ([-\d\.]+), ([-\d\.]+)\)",
+            r"id=(\d+), ([^,]+), pos=\(([-\d\.]+), ([-\d\.]+), ([-\d\.]+)\)",
             line
         )
         if lp_match:
@@ -327,6 +327,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
