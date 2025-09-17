@@ -252,7 +252,7 @@ async def online_players():
             players.append({
                 "eid": eid,
                 "name": pdata.get("name"),
-                "eos": pdata.get("eos"),
+                "id": pdata.get("eos"),
                 "steam": pdata.get("steam"),
                 "pos": pdata.get("pos")
             })
@@ -333,6 +333,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
