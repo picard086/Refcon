@@ -58,6 +58,7 @@ class EconomyBot:
         self.send(f"pm {eid} \"{msg}\"")
 
     def parse_log_line(self, line: str):
+        print(f"[econ][DEBUG] RAW: {line}")
         """Parse server log lines to update online players and positions."""
 
         # --- Chat lines (unchanged) ---
@@ -346,6 +347,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
