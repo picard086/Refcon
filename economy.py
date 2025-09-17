@@ -76,27 +76,26 @@ class EconomyBot:
                 self.cmd_handler.dispatch(message.strip(), eid, name)
 
         # --- LP output (rebuild online list) ---
-        if "id=" in line and "pltfmid=" in line:
-            lp_match = re.search(
-                r"id=(\d+), ([^,]+), pos=\(([-\d\.]+), ([-\d\.]+), ([-\d\.]+)\).*pltfmid=(\S+), crossid=(\S+)",
-                line
-            )
-            if lp_match:
-                eid = int(lp_match[1])
-                name = lp_match[2].strip()
-                x, y, z = float(lp_match[3]), float(lp_match[4]), float(lp_match[5])
-                pltfmid = lp_match[6].strip()
-                crossid = lp_match[7].strip()
+        lp_match = re.search(
+            r"id=(\d+), ([^,]+), pos=\(([-\d\.]+), ([-\d\.]+), ([-\d\.]+)\).*pltfmid=(\S+), crossid=(\S+)",
+            line
+        )
+        if lp_match:
+            eid = int(lp_match[1])
+            name = lp_match[2].strip()
+            x, y, z = float(lp_match[3]), float(lp_match[4]), float(lp_match[5])
+            pltfmid = lp_match[6].strip()
+            crossid = lp_match[7].strip()
 
-                # if we're starting a fresh lp batch, reset online list
-                if not hasattr(self, "_lp_batch"):
-                    self._lp_batch = {}
-                self._lp_batch[eid] = {
-                    "name": name,
-                    "pos": (x, y, z),
-                    "steam": pltfmid if pltfmid.startswith("Steam_") else None,
-                    "eos": crossid if crossid.startswith("EOS_") else None
-                }
+            if not hasattr(self, "_lp_batch"):
+                self._lp_batch = {}
+
+            self._lp_batch[eid] = {
+                "name": name,
+                "pos": (x, y, z),
+                "steam": pltfmid if pltfmid.startswith("Steam_") else None,
+                "eos": crossid if crossid.startswith("EOS_") else None
+            }
 
         # --- End of LP dump detection ---
         if "Total of" in line and "in the game" in line:
@@ -347,6 +346,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
