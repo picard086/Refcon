@@ -226,9 +226,11 @@ async def web_soil(request: Request, server_id: int = Form(...)):
 async def web_say(request: Request, message: str = Form(...), server_id: int = Form(...)):
     return await _dispatch_command(request, f"/say {message}", server_id, f"Said: {message}")
 
+# --- FIXED KICK ---
 @bot_api.post("/web_kick")
 async def web_kick(request: Request, player: str = Form(...), server_id: int = Form(...)):
-    return await _dispatch_command(request, f"/kick {player}", server_id, f"Kicked {player}")
+    # Use console kick command, not chat command
+    return _dispatch_json(f"kickplayer {player}", server_id)
 
 @bot_api.post("/web_ban")
 async def web_ban(request: Request, player: str = Form(...), server_id: int = Form(...)):
@@ -327,5 +329,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
