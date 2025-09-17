@@ -74,79 +74,54 @@ def ensure_schema(conn):
 
 # ---------------- Players ----------------
 def get_player(conn, eos, server_id, name=None, steam=None):
-    """
-    Always resolve to a single DB row per player.
-    If a row exists with either EOS or Steam, return/update it.
-    If none exists, create one with whatever identifiers we have.
-    """
-    cur = conn.cursor()
-
-    # Special handling for WebAdmin
+    # Special handling for WebAdmin (API bridge user)
     if eos == "WebAdmin":
         conn.execute(
             """
-            INSERT OR IGNORE INTO players (
-                server_id, eos, steam, name, coins, gold, multiplier, donor,
-                starter_used, last_daily, last_gimme, streak
-            ) VALUES (?, 'WebAdmin', 'WebAdmin', 'WebAdmin', 0, 0, 1.0, NULL, 0, 0, 0, 0)
+            INSERT OR IGNORE INTO players (server_id, eos, steam, name, coins, gold, multiplier, donor,
+                                           starter_used, last_daily, last_gimme, streak)
+            VALUES (?, 'WebAdmin', 'WebAdmin', 'WebAdmin', 0, 0, 1.0, NULL, 0, 0, 0, 0)
             """,
             (server_id,),
         )
         conn.commit()
-        cur.execute("SELECT * FROM players WHERE eos='WebAdmin' AND server_id=?", (server_id,))
+
+    # 🚩 Always prefer STEAM as the canonical identifier
+    if steam:
+        cur = conn.execute(
+            "SELECT * FROM players WHERE steam=? AND server_id=?", (steam, server_id)
+        )
+        row = cur.fetchone()
+    else:
+        cur = conn.execute(
+            "SELECT * FROM players WHERE eos=? AND server_id=?", (eos, server_id)
+        )
+        row = cur.fetchone()
+
+    if row:
+        # Update stored EOS if missing or outdated
+        if eos and (not row["eos"] or row["eos"] != eos):
+            conn.execute("UPDATE players SET eos=? WHERE id=?", (eos, row["id"]))
+        conn.commit()
+        cur = conn.execute("SELECT * FROM players WHERE id=?", (row["id"],))
         return dict(cur.fetchone())
 
-    # 1. Try EOS
-    if eos:
-        cur.execute("SELECT * FROM players WHERE eos=? AND server_id=?", (eos, server_id))
-        row = cur.fetchone()
-        if row:
-            # backfill steam if missing
-            if steam and not row["steam"]:
-                conn.execute("UPDATE players SET steam=? WHERE id=?", (steam, row["id"]))
-                conn.commit()
-            return dict(row)
-
-    # 2. Try Steam
-    if steam:
-        cur.execute("SELECT * FROM players WHERE steam=? AND server_id=?", (steam, server_id))
-        row = cur.fetchone()
-        if row:
-            # backfill eos if missing
-            if eos and not row["eos"]:
-                conn.execute("UPDATE players SET eos=? WHERE id=?", (eos, row["id"]))
-                conn.commit()
-            return dict(row)
-
-    # 3. Try Name
-    if name:
-        cur.execute("SELECT * FROM players WHERE name=? AND server_id=?", (name, server_id))
-        row = cur.fetchone()
-        if row:
-            if eos and not row["eos"]:
-                conn.execute("UPDATE players SET eos=? WHERE id=?", (eos, row["id"]))
-            if steam and not row["steam"]:
-                conn.execute("UPDATE players SET steam=? WHERE id=?", (steam, row["id"]))
-            conn.commit()
-            return dict(row)
-
-    # 4. Nothing found → insert new
+    # 🚩 Insert new player row, keyed by STEAM
     conn.execute(
         """
-        INSERT INTO players (
-            server_id, eos, steam, name, coins, gold, multiplier, donor,
-            starter_used, last_daily, last_gimme, streak
-        ) VALUES (?, ?, ?, ?, 0, 0, 1.0, NULL, 0, 0, 0, 0)
+        INSERT INTO players (server_id, eos, steam, name, coins, gold, multiplier, donor,
+                             starter_used, last_daily, last_gimme, streak)
+        VALUES (?, ?, ?, ?, 0, 0, 1.0, NULL, 0, 0, 0, 0)
         """,
-        (server_id, eos, steam, name or eos or steam),
+        (server_id, eos, steam or eos, name or steam or eos),
     )
     conn.commit()
 
-    cur.execute(
-        "SELECT * FROM players WHERE (eos=? OR steam=?) AND server_id=? ORDER BY id DESC LIMIT 1",
-        (eos, steam, server_id),
+    cur = conn.execute(
+        "SELECT * FROM players WHERE steam=? AND server_id=?", (steam or eos, server_id)
     )
     return dict(cur.fetchone())
+
 
 
 
@@ -253,4 +228,5 @@ def set_master_password(conn, pw):
         (pw,),
     )
     conn.commit()
+
 
