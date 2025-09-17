@@ -17,6 +17,30 @@
       position: relative;
       min-height: 150px;
     }
+
+    /* --- Action button styles --- */
+    .action-buttons {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .action-buttons .btn {
+      border-radius: 6px !important;
+      font-weight: 600;
+      padding: 6px 10px;
+      transition: all 0.2s ease;
+    }
+
+    .action-buttons .btn:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+
+    .btn-donor { background-color: #2563eb; color: #fff; }   /* blue */
+    .btn-donor-t4 { background-color: #7c3aed; color: #fff; } /* purple */
+    .btn-gold { background-color: #facc15; color: #000; }    /* yellow */
+    .btn-kick { background-color: #dc2626; color: #fff; }    /* red */
   </style>
 </head>
 <body class="text-light">
@@ -123,12 +147,13 @@ async function loadPlayers() {
           <td>${p.eos}</td>
           <td>${p.pos || "?"}</td>
           <td>
-            <div class="btn-group btn-group-sm">
-              <button class="btn btn-primary" onclick="addDonor('${p.name}', 't1', ${serverId})">Donor T1</button>
-              <button class="btn btn-primary" onclick="addDonor('${p.name}', 't2', ${serverId})">T2</button>
-              <button class="btn btn-primary" onclick="addDonor('${p.name}', 't3', ${serverId})">T3</button>
-              <button class="btn btn-warning" onclick="addGold('${p.name}', 1000, ${serverId})">+1k Gold</button>
-              <button class="btn btn-danger" onclick="kickPlayer('${p.name}', ${serverId})">Kick</button>
+            <div class="action-buttons">
+              <button class="btn btn-donor" onclick="addDonor('${p.name}', 't1', ${serverId})">T1</button>
+              <button class="btn btn-donor" onclick="addDonor('${p.name}', 't2', ${serverId})">T2</button>
+              <button class="btn btn-donor" onclick="addDonor('${p.name}', 't3', ${serverId})">T3</button>
+              <button class="btn btn-donor-t4" onclick="addDonor('${p.name}', 't4', ${serverId})">T4</button>
+              <button class="btn btn-gold" onclick="addGold('${p.name}', 1000, ${serverId})">+1k Gold</button>
+              <button class="btn btn-kick" onclick="kickPlayer('${p.name}', ${serverId})">Kick</button>
             </div>
           </td>
         `;
