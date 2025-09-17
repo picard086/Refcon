@@ -325,11 +325,6 @@ def main():
             print(f"[econ] Launching thread for server {row['id']} ({row['name']})")
             bot_instances.append(bot)
 
-            # ---- Add lp refresh job for this bot ----
-            def refresh_lp(b=bot):
-                b.send("lp")
-            bot.scheduler.every(5).seconds.do(refresh_lp)
-
             t = threading.Thread(target=run_bot, args=(bot,), daemon=True)
             threads.append(t)
             t.start()
@@ -349,3 +344,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
