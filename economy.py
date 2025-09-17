@@ -105,21 +105,21 @@ class EconomyBot:
                 del self._lp_batch
 
 
-    def poll(self):
-        """Poll Telnet messages and feed them to command handler."""
-        try:
-            raw = self.tn.read_very_eager().decode("utf-8", errors="ignore")
-            if raw:
-                for line in raw.splitlines():
-                    print(f"[econ][{self.server_id} - {self.name}] {line}")
-                    self.parse_log_line(line)
-                self.scheduler.run_pending()
-        except EOFError:
-            print(f"[econ][{self.server_id} - {self.name}] Telnet connection closed.")
-            return False
-        except Exception as e:
-            print(f"[econ][{self.server_id} - {self.name}] Error in poll loop: {e}")
-        return True
+def poll(self):
+    """Poll Telnet messages and feed them to command handler."""
+    try:
+        raw = self.tn.read_very_eager().decode("utf-8", errors="ignore")
+        if raw:
+            for line in raw.splitlines():
+                print(f"[econ][{self.server_id} - {self.name}] {line}")
+                self.parse_log_line(line)
+    except EOFError:
+        print(f"[econ][{self.server_id} - {self.name}] Telnet connection closed.")
+        return False
+    except Exception as e:
+        print(f"[econ][{self.server_id} - {self.name}] Error in poll loop: {e}")
+    return True
+
 
 
 def run_bot(bot: EconomyBot):
@@ -347,6 +347,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
