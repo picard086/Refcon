@@ -5,17 +5,48 @@
   <title>Refcon Web Panel</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
-    body { background-color: #121212; }
-    .navbar-brand { font-weight: bold; }
-    .spinner-overlay {
-      position: absolute;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      display: none;
+    body { 
+      background-color: #0d1117; 
+      color: #e6edf3;
+      font-family: "Segoe UI", Roboto, sans-serif;
+    }
+    .navbar {
+      background: linear-gradient(90deg, #2563eb, #1e3a8a);
+    }
+    .navbar-brand { 
+      font-weight: bold; 
+      letter-spacing: 0.5px;
+    }
+    .nav-tabs .nav-link {
+      color: #e6edf3;
+    }
+    .nav-tabs .nav-link.active {
+      background: #1e40af;
+      color: #fff;
+      border: none;
+      border-radius: 6px 6px 0 0;
+    }
+    .tab-content {
+      background: #161b22;
+      padding: 20px;
+      border-radius: 0 6px 6px 6px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.4);
     }
     .table-container {
       position: relative;
       min-height: 150px;
+    }
+    .table {
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .table thead {
+      background: #1f2937;
+      color: #f9fafb;
+      font-weight: 600;
+    }
+    .table-hover tbody tr:hover {
+      background: #2d3748;
     }
 
     /* --- Action button styles --- */
@@ -31,23 +62,23 @@
       padding: 6px 10px;
       transition: all 0.2s ease;
     }
-
     .action-buttons .btn:hover {
-      opacity: 0.9;
+      opacity: 0.95;
       transform: translateY(-1px);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
     }
 
-    .btn-donor { background-color: #2563eb; color: #fff; }   /* blue */
-    .btn-donor-t4 { background-color: #7c3aed; color: #fff; } /* purple */
-    .btn-gold { background-color: #facc15; color: #000; }    /* yellow */
-    .btn-kick { background-color: #dc2626; color: #fff; }    /* red */
+    .btn-donor { background-color: #2563eb; color: #fff; }
+    .btn-donor-t4 { background-color: #7c3aed; color: #fff; }
+    .btn-gold { background-color: #facc15; color: #000; }
+    .btn-kick { background-color: #dc2626; color: #fff; }
   </style>
 </head>
-<body class="text-light">
+<body>
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow">
+<nav class="navbar navbar-expand-lg shadow">
   <div class="container-fluid">
-    <a class="navbar-brand" href="#">Refcon Control Panel</a>
+    <a class="navbar-brand text-light" href="#">Refcon Control Panel</a>
   </div>
 </nav>
 
@@ -65,19 +96,19 @@
 
     <!-- Players Tab -->
     <div class="tab-pane fade show active" id="players">
-      <h4>Online Players</h4>
+      <h4 class="mb-3">Online Players</h4>
       <div class="table-container">
         <div id="loadingSpinner" class="spinner-overlay">
           <div class="spinner-border text-primary" role="status">
             <span class="visually-hidden">Loading...</span>
           </div>
         </div>
-        <table class="table table-dark table-striped table-hover align-middle shadow rounded" id="playersTable">
-          <thead class="table-secondary text-dark">
+        <table class="table table-dark table-hover align-middle shadow-sm" id="playersTable">
+          <thead>
             <tr>
               <th>EID</th>
               <th>Name</th>
-              <th>EOS/Steam</th>
+              <th>Account</th>
               <th>Position</th>
               <th>Actions</th>
             </tr>
@@ -128,7 +159,6 @@
 <script>
 const spinner = document.getElementById("loadingSpinner");
 
-// Fetch online players and build table with actions
 async function loadPlayers() {
   spinner.style.display = "block";
   const tbody = document.querySelector("#playersTable tbody");
@@ -144,7 +174,7 @@ async function loadPlayers() {
         tr.innerHTML = `
           <td>${p.eid}</td>
           <td>${p.name}</td>
-          <td>${p.eos}</td>
+          <td title="Steam: ${p.steam || 'N/A'}">${p.id || p.eos || "?"}</td>
           <td>${p.pos || "?"}</td>
           <td>
             <div class="action-buttons">
