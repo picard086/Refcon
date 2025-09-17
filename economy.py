@@ -54,56 +54,49 @@ class EconomyBot:
         """Send a private message to a player."""
         self.send(f"pm {eid} \"{msg}\"")
 
-def parse_log_line(self, line: str):
-    """Parse server log lines to update online players and positions."""
-    # Chat line with EOS and entity id
-    chat_match = re.search(
-        r"Chat \(from '(Steam_\d+|EOS_[^']+)', entity id '(\d+)'[^)]*\): '([^']+)': (/.+)",
-        line
-    )
-    if chat_match:
-        eos_or_steam, eid, name, message = chat_match.groups()
-        eid = int(eid)
-        if eid not in self.online:
-            self.online[eid] = {}
-        self.online[eid].update({"name": name, "eos": eos_or_steam, "steam": eos_or_steam})
+    def parse_log_line(self, line: str):
+        """Parse server log lines to update online players and positions."""
+        # Chat line with EOS and entity id
+        chat_match = re.search(
+            r"Chat \(from '(Steam_\d+|EOS_[^']+)', entity id '(\d+)'[^)]*\): '([^']+)': (/.+)",
+            line
+        )
+        if chat_match:
+            eos_or_steam, eid, name, message = chat_match.groups()
+            eid = int(eid)
+            if eid not in self.online:
+                self.online[eid] = {}
+            self.online[eid].update({"name": name, "eos": eos_or_steam, "steam": eos_or_steam})
 
-        if message.strip().startswith("/"):
-            self.cmd_handler.dispatch(message.strip(), eid, name)
+            if message.strip().startswith("/"):
+                self.cmd_handler.dispatch(message.strip(), eid, name)
 
-    # Position update from spawn logs
-    pos_match = re.search(r"PlayerSpawnedInWorld.*at \(([-\d\.]+), ([-\d\.]+), ([-\d\.]+)\)", line)
-    if pos_match:
-        x, y, z = map(float, pos_match.groups())
-        eos_match = re.search(r"EOS_[0-9a-fA-F]+", line)
-        if eos_match:
-            eos = eos_match.group(0)
-            for eid, pdata in self.online.items():
-                if pdata.get("eos") == eos:
-                    pdata["pos"] = (x, y, z)
+        # Position update from spawn logs
+        pos_match = re.search(r"PlayerSpawnedInWorld.*at \(([-\d\.]+), ([-\d\.]+), ([-\d\.]+)\)", line)
+        if pos_match:
+            x, y, z = map(float, pos_match.groups())
+            eos_match = re.search(r"EOS_[0-9a-fA-F]+", line)
+            if eos_match:
+                eos = eos_match.group(0)
+                for eid, pdata in self.online.items():
+                    if pdata.get("eos") == eos:
+                        pdata["pos"] = (x, y, z)
 
-    # Position update from `lp` (listplayers) output
-    lp_match = re.search(
-        r"id=(\d+), ([^,]+), pos=\(([-\d\.]+), ([-\d\.]+), ([-\d\.]+)\).*pltfmid=(\S+), crossid=(\S+)",
-        line
-    )
-    if lp_match:
-        eid = int(lp_match[1])
-        name = lp_match[2].strip()
-        x, y, z = float(lp_match[3]), float(lp_match[4]), float(lp_match[5])
-        pltfmid = lp_match[6].strip()
-        crossid = lp_match[7].strip()
-
-        if eid not in self.online:
-            self.online[eid] = {}
-
-        self.online[eid].update({
-            "name": name,
-            "pos": (x, y, z),  # <-- position always set here
-            "steam": pltfmid if pltfmid.startswith("Steam_") else None,
-            "eos": crossid if crossid.startswith("EOS_") else None
-        })
-
+        # Position update from `lp` (listplayers) output
+        lp_match = re.search(
+            r"id=(\d+), ([^,]+), pos=\(([^)]+)\).*?(pltfmid=\S+)?,?\s*(crossid=\S+)?",
+            line
+        )
+        if lp_match:
+            eid = int(lp_match[1])
+            name = lp_match[2].strip()
+            x, y, z = float(lp_match[3]), float(lp_match[4]), float(lp_match[5])
+            if eid not in self.online:
+                self.online[eid] = {}
+            self.online[eid].update({
+                "name": name,
+                "pos": (x, y, z)
+            })
 
     def poll(self, scheduler):
         """Poll Telnet messages and feed them to command handler."""
@@ -334,6 +327,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
