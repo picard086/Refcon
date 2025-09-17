@@ -80,22 +80,37 @@ def get_player(conn, eos, server_id, name=None):
         )
         conn.commit()
 
+    # 1. Try EOS match first
     cur = conn.execute(
         "SELECT * FROM players WHERE eos=? AND server_id=?", (eos, server_id)
     )
     row = cur.fetchone()
-    if not row:
-        conn.execute(
-            """
-            INSERT INTO players (server_id, eos, name, coins, gold, multiplier, donor,
-                                 starter_used, last_daily, last_gimme, streak)
-            VALUES (?, ?, ?, 0, 0, 1.0, NULL, 0, 0, 0, 0)
-            """,
-            (server_id, eos, name or eos),
+
+    # 2. If no EOS row, try name fallback
+    if not row and name:
+        cur = conn.execute(
+            "SELECT * FROM players WHERE name=? AND server_id=?", (name, server_id)
         )
-        conn.commit()
-        return get_player(conn, eos, server_id, name)
-    return dict(row)
+        row = cur.fetchone()
+
+    if row:
+        return dict(row)
+
+    # 3. Only if truly nothing exists, insert once
+    conn.execute(
+        """
+        INSERT INTO players (server_id, eos, name, coins, gold, multiplier, donor,
+                             starter_used, last_daily, last_gimme, streak)
+        VALUES (?, ?, ?, 0, 0, 1.0, NULL, 0, 0, 0, 0)
+        """,
+        (server_id, eos, name or eos),
+    )
+    conn.commit()
+
+    cur = conn.execute(
+        "SELECT * FROM players WHERE eos=? AND server_id=?", (eos, server_id)
+    )
+    return dict(cur.fetchone())
 
 
 def update_balance(conn, eos, server_id, coins=None, gold=None):
@@ -201,4 +216,3 @@ def set_master_password(conn, pw):
         (pw,),
     )
     conn.commit()
-
