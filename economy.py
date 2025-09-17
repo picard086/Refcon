@@ -59,7 +59,8 @@ class EconomyBot:
 
     def parse_log_line(self, line: str):
         """Parse server log lines to update online players and positions."""
-        # Chat line with EOS and entity id
+
+        # --- Chat lines (unchanged) ---
         chat_match = re.search(
             r"Chat \(from '(Steam_\d+|EOS_[^']+)', entity id '(\d+)'[^)]*\): '([^']+)': (/.+)",
             line
@@ -74,36 +75,35 @@ class EconomyBot:
             if message.strip().startswith("/"):
                 self.cmd_handler.dispatch(message.strip(), eid, name)
 
-        # Position update from spawn logs
-        pos_match = re.search(r"PlayerSpawnedInWorld.*at \(([-\d\.]+), ([-\d\.]+), ([-\d\.]+)\)", line)
-        if pos_match:
-            x, y, z = map(float, pos_match.groups())
-            eos_match = re.search(r"EOS_[0-9a-fA-F]+", line)
-            if eos_match:
-                eos = eos_match.group(0)
-                for eid, pdata in self.online.items():
-                    if pdata.get("eos") == eos:
-                        pdata["pos"] = (x, y, z)
+        # --- LP output (rebuild online list) ---
+        if "id=" in line and "pltfmid=" in line:
+            lp_match = re.search(
+                r"id=(\d+), ([^,]+), pos=\(([-\d\.]+), ([-\d\.]+), ([-\d\.]+)\).*pltfmid=(\S+), crossid=(\S+)",
+                line
+            )
+            if lp_match:
+                eid = int(lp_match[1])
+                name = lp_match[2].strip()
+                x, y, z = float(lp_match[3]), float(lp_match[4]), float(lp_match[5])
+                pltfmid = lp_match[6].strip()
+                crossid = lp_match[7].strip()
 
-        # Position update from `lp` (listplayers) output
-        lp_match = re.search(
-            r"id=(\d+), ([^,]+), pos=\(([-\d\.]+), ([-\d\.]+), ([-\d\.]+)\).*pltfmid=(\S+), crossid=(\S+)",
-            line
-        )
-        if lp_match:
-            eid = int(lp_match[1])
-            name = lp_match[2].strip()
-            x, y, z = float(lp_match[3]), float(lp_match[4]), float(lp_match[5])
-            pltfmid = lp_match[6].strip()
-            crossid = lp_match[7].strip()
-            if eid not in self.online:
-                self.online[eid] = {}
-            self.online[eid].update({
-                "name": name,
-                "pos": (x, y, z),
-                "steam": pltfmid if pltfmid.startswith("Steam_") else None,
-                "eos": crossid if crossid.startswith("EOS_") else None
-            })
+                # if we're starting a fresh lp batch, reset online list
+                if not hasattr(self, "_lp_batch"):
+                    self._lp_batch = {}
+                self._lp_batch[eid] = {
+                    "name": name,
+                    "pos": (x, y, z),
+                    "steam": pltfmid if pltfmid.startswith("Steam_") else None,
+                    "eos": crossid if crossid.startswith("EOS_") else None
+                }
+
+        # --- End of LP dump detection ---
+        if "Total of" in line and "in the game" in line:
+            if hasattr(self, "_lp_batch"):
+                self.online = self._lp_batch
+                del self._lp_batch
+
 
     def poll(self):
         """Poll Telnet messages and feed them to command handler."""
@@ -347,6 +347,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
