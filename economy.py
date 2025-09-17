@@ -78,7 +78,7 @@ class EconomyBot:
 
         # --- LP output (rebuild online list) ---
         lp_match = re.search(
-            r"id=(\d+), ([^,]+), pos=\(([-\d\.]+), ([-\d\.]+), ([-\d\.]+)\).*pltfmid=(\S+), crossid=(\S+)",
+            r"id=(\d+), ([^,]+), pos=\(([^)]+)\).*pltfmid=([^,]+), crossid=([^,]+)",
             line
         )
         if lp_match:
@@ -346,6 +346,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
