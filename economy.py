@@ -85,7 +85,7 @@ class EconomyBot:
             })
 
             # 🔗 Make sure DB row exists/updates with both EOS + Steam
-            get_player(self.conn, eos_id or steam_id, self.server_id, name, steam_id)
+            get_player(self.conn, eos_id or steam_id, self.server_id, name)
 
             # Handle commands
             if message.strip().startswith("/"):
@@ -393,6 +393,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
