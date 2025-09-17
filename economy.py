@@ -28,9 +28,6 @@ class EconomyBot:
         self.online = {}   # {eid: {"name": str, "eos": str, "steam": str, "pos": (x,y,z)}}
         self.conn = conn   # shared database connection
 
-        # --- attach scheduler to each bot ---
-        self.scheduler = Scheduler(self)
-
     def connect(self):
         """Connect to the 7DTD server via Telnet."""
         try:
@@ -58,10 +55,8 @@ class EconomyBot:
         self.send(f"pm {eid} \"{msg}\"")
 
     def parse_log_line(self, line: str):
-        print(f"[econ][DEBUG] RAW: {line}")
         """Parse server log lines to update online players and positions."""
-
-        # --- Chat lines (unchanged) ---
+        # Chat line with EOS and entity id
         chat_match = re.search(
             r"Chat \(from '(Steam_\d+|EOS_[^']+)', entity id '(\d+)'[^)]*\): '([^']+)': (/.+)",
             line
@@ -76,49 +71,48 @@ class EconomyBot:
             if message.strip().startswith("/"):
                 self.cmd_handler.dispatch(message.strip(), eid, name)
 
-        # --- LP output (rebuild online list) ---
+        # Position update from spawn logs
+        pos_match = re.search(r"PlayerSpawnedInWorld.*at \(([-\d\.]+), ([-\d\.]+), ([-\d\.]+)\)", line)
+        if pos_match:
+            x, y, z = map(float, pos_match.groups())
+            eos_match = re.search(r"EOS_[0-9a-fA-F]+", line)
+            if eos_match:
+                eos = eos_match.group(0)
+                for eid, pdata in self.online.items():
+                    if pdata.get("eos") == eos:
+                        pdata["pos"] = (x, y, z)
+
+        # Position update from `lp` (listplayers) output
         lp_match = re.search(
-            r"id=(\d+), ([^,]+), pos=\(([^)]+)\).*pltfmid=([^,]+), crossid=([^,]+)",
+            r"id=(\d+), ([^,]+), pos=\(([^)]+)\).*?(pltfmid=\S+)?,?\s*(crossid=\S+)?",
             line
         )
         if lp_match:
             eid = int(lp_match[1])
             name = lp_match[2].strip()
             x, y, z = float(lp_match[3]), float(lp_match[4]), float(lp_match[5])
-            pltfmid = lp_match[6].strip()
-            crossid = lp_match[7].strip()
-
-            if not hasattr(self, "_lp_batch"):
-                self._lp_batch = {}
-
-            self._lp_batch[eid] = {
+            if eid not in self.online:
+                self.online[eid] = {}
+            self.online[eid].update({
                 "name": name,
-                "pos": (x, y, z),
-                "steam": pltfmid if pltfmid.startswith("Steam_") else None,
-                "eos": crossid if crossid.startswith("EOS_") else None
-            }
+                "pos": (x, y, z)
+            })
 
-        # --- End of LP dump detection ---
-        if "Total of" in line and "in the game" in line:
-            if hasattr(self, "_lp_batch"):
-                self.online = self._lp_batch
-                del self._lp_batch
-
-
-def poll(self):
-    """Poll Telnet messages and dump raw output for debug."""
-    try:
-        raw = self.tn.read_very_eager().decode("utf-8", errors="ignore")
-        if raw:
-            print(f"[econ][{self.server_id} - {self.name}][RAW]\n{raw}")
-    except EOFError:
-        print(f"[econ][{self.server_id} - {self.name}] Telnet connection closed.")
-        return False
-    except Exception as e:
-        print(f"[econ][{self.server_id} - {self.name}] Error in poll loop: {e}")
-    return True
-
-
+    def poll(self, scheduler):
+        """Poll Telnet messages and feed them to command handler."""
+        try:
+            raw = self.tn.read_very_eager().decode("utf-8", errors="ignore")
+            if raw:
+                for line in raw.splitlines():
+                    print(f"[econ][{self.server_id} - {self.name}] {line}")
+                    self.parse_log_line(line)
+                scheduler.run_pending()
+        except EOFError:
+            print(f"[econ][{self.server_id} - {self.name}] Telnet connection closed.")
+            return False
+        except Exception as e:
+            print(f"[econ][{self.server_id} - {self.name}] Error in poll loop: {e}")
+        return True
 
 
 def run_bot(bot: EconomyBot):
@@ -127,9 +121,7 @@ def run_bot(bot: EconomyBot):
     if "WebAdmin" not in bot.admins:
         bot.admins.append("WebAdmin")
 
-    # Make lp run every 10s instead of 30
-    scheduler = Scheduler(bot, income_interval=60, lp_interval=10)
-    bot.scheduler = scheduler  # attach so bot has a reference
+    scheduler = Scheduler(bot)
     scheduler.start()
 
     try:
@@ -140,7 +132,6 @@ def run_bot(bot: EconomyBot):
     except KeyboardInterrupt:
         print(f"[econ][{bot.server_id} - {bot.name}] Shutting down bot...")
         scheduler.stop()
-
 
 
 # ---- NEW: API Bridge ----
@@ -237,17 +228,7 @@ async def web_say(request: Request, message: str = Form(...), server_id: int = F
 
 @bot_api.post("/web_kick")
 async def web_kick(request: Request, player: str = Form(...), server_id: int = Form(...)):
-    bots = [b for b in bot_instances if str(b.server_id) == str(server_id)]
-    if not bots:
-        return templates.TemplateResponse("index.html", {"request": request, "msg": "Server not found"})
-    try:
-        bot = bots[0]
-        # Send a raw console command so it works
-        bot.send(f'kick "{player}"')
-        return templates.TemplateResponse("index.html", {"request": request, "msg": f"Kicked {player}"})
-    except Exception as e:
-        return templates.TemplateResponse("index.html", {"request": request, "msg": str(e)})
-
+    return await _dispatch_command(request, f"/kick {player}", server_id, f"Kicked {player}")
 
 @bot_api.post("/web_ban")
 async def web_ban(request: Request, player: str = Form(...), server_id: int = Form(...)):
@@ -302,6 +283,7 @@ def _dispatch_json(cmd: str, target_server: int = None):
     return {"status": "ok", "cmd": cmd, "servers": [b.server_id for b in bots]}
 
 
+
 def start_bot_api():
     uvicorn.run(bot_api, host="0.0.0.0", port=8848, log_level="info")
 
@@ -326,7 +308,6 @@ def main():
         if bot.connect():
             print(f"[econ] Launching thread for server {row['id']} ({row['name']})")
             bot_instances.append(bot)
-
             t = threading.Thread(target=run_bot, args=(bot,), daemon=True)
             threads.append(t)
             t.start()
@@ -346,12 +327,5 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-
-
-
-
 
 
