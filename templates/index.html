@@ -196,7 +196,7 @@ async function loadPlayers() {
         tr.innerHTML = `
           <td>${p.eid}</td>
           <td>${p.name}</td>
-          <td title="Steam: ${p.steam || 'N/A'}">${p.id || p.eos || "?"}</td>
+          <td title="Steam: ${p.steam || 'N/A'}">${p.account || "?"}</td>
           <td>${p.pos || "?"}</td>
           <td>
             <div class="action-buttons">
@@ -226,7 +226,7 @@ function openPlayerModal(player) {
 
   document.getElementById("playerDetails").innerHTML = `
     <p><strong>Name:</strong> ${player.name}</p>
-    <p><strong>EOS:</strong> ${player.id}</p>
+    <p><strong>Account:</strong> ${player.account}</p>
     <p><strong>Steam:</strong> ${player.steam || "N/A"}</p>
     <p><strong>Position:</strong> ${player.pos || "?"}</p>
   `;
