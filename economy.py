@@ -8,7 +8,8 @@ from scheduler import Scheduler
 from commands import CommandHandler
 from utils import load_admins
 from db import get_player
-
+from fastapi import Query
+from db import get_teleports
 
 # --- NEW IMPORTS for API bridge + web UI ---
 from fastapi import FastAPI, Request, Form
@@ -256,6 +257,19 @@ async def web_deltp(player_id: int = Form(...), name: str = Form(...)):
     del_teleport(bot_instances[0].conn, player_id, name)
     return {"status": "ok"}
 
+@bot_api.get("/web_get_tps")
+async def web_get_tps(player_id: int = Query(...)):
+    try:
+        conn = sqlite3.connect("economy.db", check_same_thread=False)
+        conn.row_factory = sqlite3.Row
+        cur = conn.cursor()
+
+        cur.execute("SELECT * FROM teleports WHERE player_id=?", (player_id,))
+        rows = cur.fetchall()
+        return [dict(r) for r in rows]
+    except Exception as e:
+        return {"error": str(e)}
+
 
 # --- Online players as JSON (skip WebAdmin) ---
 @bot_api.get("/online_players")
@@ -351,6 +365,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
